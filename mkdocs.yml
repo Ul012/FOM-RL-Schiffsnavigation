@@ -1,0 +1,5 @@
+site_name: RL Schiffsnavigation
+theme:
+  name: material
+nav:
+  - Start: docs/index.md
