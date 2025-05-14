@@ -57,3 +57,6 @@ plt.ylabel("Gesamtreward")
 plt.title("Lernkurve des Q-Learning-Agents")
 plt.grid(True)
 plt.show()
+
+np.save("q_table.npy", Q)
+print("Q-Tabelle gespeichert als q_table.npy")
