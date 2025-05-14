@@ -3,7 +3,6 @@ import numpy as np
 import sys
 import os
 import time
-import random
 
 # Projektstruktur anpassen, damit GridEnvironment importierbar ist
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '.')))
@@ -25,19 +24,19 @@ WIDTH = HEIGHT = CELL_SIZE * GRID_SIZE
 
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("AGENTEN-LAUF NACH POLICY")
-font = pygame.font.SysFont("Segoe UI Symbol", 40)
+pygame.display.set_caption("🚢 Schiffsnavigation – Policylauf")
+font = pygame.font.SysFont("Segoe UI Emoji", 40)
 
 actions_map = {0: '↑', 1: '→', 2: '↓', 3: '←'}
 color_map = {
-    'goal': (0, 200, 0),      # grün
-    'hazard': (200, 0, 0),    # rot
-    'agent': (30, 144, 255),  # blau
-    'start': (255, 140, 0)    # orange
+    'goal': (255, 255, 255),   # kariertes Ziel als weißes Feld
+    'hazard': (139, 0, 0),     # dunkles Rot für gefährliche Felsen
+    'agent': (0, 0, 128),      # Marineblau
+    'start': (255, 140, 0)     # orange
 }
 
 def draw_grid(agent_pos):
-    screen.fill((255, 255, 255))
+    screen.fill((173, 216, 230))  # heller Blauton (Wasserhintergrund)
     for i in range(GRID_SIZE):
         for j in range(GRID_SIZE):
             rect = pygame.Rect(j * CELL_SIZE, i * CELL_SIZE, CELL_SIZE, CELL_SIZE)
@@ -45,13 +44,13 @@ def draw_grid(agent_pos):
 
             pos = (i, j)
             if pos == agent_pos:
-                txt = font.render("●", True, color_map['agent'])
+                txt = font.render("🚢", True, color_map['agent'])
             elif pos == env.start_pos:
                 txt = font.render("S", True, color_map['start'])
             elif pos == env.goal_pos:
-                txt = font.render("✪", True, color_map['goal'])
+                txt = font.render("🏁", True, color_map['goal'])  # Ziel: Zielflagge
             elif pos in env.hazards:
-                txt = font.render("✖", True, color_map['hazard'])
+                txt = font.render("🪨", True, color_map['hazard'])  # Hindernis: Felsen
             else:
                 state = env.pos_to_state(pos)
                 best_action = np.argmax(Q[state])
