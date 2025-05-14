@@ -1,18 +1,28 @@
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
+import random
 
 class GridEnvironment(gym.Env):
     metadata = {"render_modes": ["human"]}
 
-    def __init__(self):
+    def __init__(self, mode="static"):
         super(GridEnvironment, self).__init__()
         self.grid_size = 5
         self.observation_space = spaces.Discrete(self.grid_size * self.grid_size)
         self.action_space = spaces.Discrete(4)  # 0=oben, 1=rechts, 2=unten, 3=links
         self.start_pos = (0, 0)
-        self.goal_pos = (4, 4)
-        self.hazards = [(1, 1), (2, 3), (3, 1)]
+
+        if mode == "random":
+            all_positions = [(i, j) for i in range(self.grid_size) for j in range(self.grid_size)]
+            all_positions.remove(self.start_pos)
+            self.goal_pos = random.choice(all_positions)
+            all_positions.remove(self.goal_pos)
+            self.hazards = random.sample(all_positions, k=3)
+        else:
+            self.goal_pos = (4, 4)
+            self.hazards = [(1, 1), (2, 3), (3, 1)]
+
         self.state = self.pos_to_state(self.start_pos)
 
     def reset(self, seed=None, options=None):

@@ -3,16 +3,20 @@ import numpy as np
 import sys
 import os
 import time
+import random
 
 # Projektstruktur anpassen, damit GridEnvironment importierbar ist
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '.')))
 from navigation.environment.grid_environment import GridEnvironment
 
-# Q-Tabelle laden
+# Modusumschalter: "static" oder "random"
+ENV_MODE = "static"
+
+# Q-Tabelle laden (muss zu Umgebung passen!)
 Q = np.load("q_table.npy")
 
 # Umgebung vorbereiten
-env = GridEnvironment()
+env = GridEnvironment(mode=ENV_MODE)
 
 # Pygame-Setup
 CELL_SIZE = 80
