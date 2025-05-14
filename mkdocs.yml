@@ -1,0 +1,7 @@
+site_name: Schiffsnavigation mit Reinforcement Learning
+theme:
+  name: material
+
+nav:
+  - Home: index.md
+  - Git Anleitung: how-to-push.md

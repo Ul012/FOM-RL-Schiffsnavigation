@@ -1,0 +1,24 @@
+# Virtuelle Umgebung
+rl-venv/
+.venv/
+
+# Python-Dateien
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Logs und temporäre Dateien
+*.log
+*.tmp
+
+# VSCode / PyCharm
+.idea/
+.vscode/
+
+# mkdocs Build-Verzeichnis
+site/
+
+# Sonstiges
+.DS_Store
+.env
