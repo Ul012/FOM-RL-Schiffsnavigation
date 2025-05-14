@@ -1,10 +1,10 @@
-# 🚢 Simulation von Schiffsnavigation mit Reinforcement Learning
+# Simulation von Schiffsnavigation mit Reinforcement Learning
 
 Dieses Projekt zeigt, wie ein Q-Learning-Agent ein Schiff durch eine Gitterwelt navigiert. Die Umgebung basiert auf OpenAI Gymnasium und wird visuell mit Pygame dargestellt. Die Dokumentation erfolgt mit MkDocs.
 
 ---
 
-## 🔍 Inhalte
+## Inhalte
 
 - Eigene Grid-Umgebung (OpenAI Gym-kompatibel)
 - Q-Learning-Implementierung mit Trainingsschleife
@@ -14,7 +14,7 @@ Dieses Projekt zeigt, wie ein Q-Learning-Agent ein Schiff durch eine Gitterwelt 
 
 ---
 
-## ⚙️ Setup
+## Setup
 
 ```bash
 # Virtuelle Umgebung erstellen und aktivieren
