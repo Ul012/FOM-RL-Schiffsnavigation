@@ -63,7 +63,7 @@ if len(rewards_per_episode) >= window_size:
 
 plt.xlabel("Episode")
 plt.ylabel("Gesamtreward")
-plt.title("Lernkurve in dynamischen Umgebungen")
+plt.title("Lernkurve in statischer Umgebung")
 plt.legend()
 plt.grid(True)
 plt.tight_layout()
