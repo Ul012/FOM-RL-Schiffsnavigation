@@ -6,18 +6,26 @@ import random
 class GridEnvironment(gym.Env):
     metadata = {"render_modes": ["human"]}
 
-    def __init__(self, mode="static"):
+    def __init__(self, mode="static", seed=None):
         super(GridEnvironment, self).__init__()
         self.grid_size = 5
         self.observation_space = spaces.Discrete(self.grid_size * self.grid_size)
         self.action_space = spaces.Discrete(4)  # 0=oben, 1=rechts, 2=unten, 3=links
         self.start_pos = (0, 0)
 
+        # Seed setzen, falls angegeben
+        if seed is not None:
+            random.seed(seed)
+            np.random.seed(seed)
+
         if mode == "random":
             all_positions = [(i, j) for i in range(self.grid_size) for j in range(self.grid_size)]
+            # Startposition ist fix: (0, 0)
             all_positions.remove(self.start_pos)
+            # Zielposition wird zufällig aus den übrigen Feldern gewählt
             self.goal_pos = random.choice(all_positions)
             all_positions.remove(self.goal_pos)
+            # Drei Gefahrenfelder werden zufällig gewählt (dürfen nicht Start oder Ziel sein)
             self.hazards = random.sample(all_positions, k=3)
         else:
             self.goal_pos = (4, 4)

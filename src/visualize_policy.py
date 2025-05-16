@@ -11,7 +11,7 @@ from navigation.environment.grid_environment import GridEnvironment
 Q = np.load("q_table.npy")
 
 # Umgebung initialisieren
-env = GridEnvironment()
+env = GridEnvironment(mode="random", seed=42)
 
 # Visualisierungsparameter
 CELL_SIZE = 80

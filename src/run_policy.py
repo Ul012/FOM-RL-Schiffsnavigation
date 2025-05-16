@@ -9,7 +9,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '.')))
 from navigation.environment.grid_environment import GridEnvironment
 
 # Modusumschalter: "static" oder "random"
-ENV_MODE = "static"
+ENV_MODE = "random"
 
 # Q-Tabelle laden (muss zu Umgebung passen!)
 Q = np.load("q_table.npy")
