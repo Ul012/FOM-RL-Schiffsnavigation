@@ -16,18 +16,19 @@ Dieses Projekt demonstriert, wie ein Reinforcement-Learning-Agent ein Schiff dur
 ```text
 FOM-rl-shipnav-qlearning/
 ├── src/
-│   ├── train.py                     ← Q-Learning Training
-│   ├── run_policy.py                ← Agentenlauf nach gelernter Policy
-│   ├── visualize_policy.py          ← Statische Visualisierung
+│   ├── train.py                     ← Q-Learning-Training mit Visualisierung & Erfolgsmetrik
+│   ├── evaluate_policy.py           ← Statistische Zielerreichung auf zufälligen Karten
+│   ├── run_policy.py                ← Animierter Agentenlauf (optional)
+│   ├── visualize_policy.py          ← Statische Darstellung der gelernten Policy mit Emojis
 │   └── navigation/
 │       └── environment/
-│           └── grid_environment.py  ← Gym-kompatible Umgebung mit Moduswahl
+│           └── grid_environment.py  ← Gym-kompatible Umgebung mit Moduswahl & Seed
 ├── requirements.txt                 ← Projektabhängigkeiten
 ├── mkdocs.yml                       ← MkDocs-Konfiguration
 ├── docs/
 │   ├── index.md                     ← Startseite
-│   ├── funktionsweise.md            ← Q-Learning & Agent
-│   ├── training.md                  ← Lernkurve und Ergebnisse
-│   └── how-to-push.md               ← Git-Push-Anleitung
+│   ├── funktionsweise.md            ← Q-Learning, Zustände, Aktionen
+│   ├── training.md                  ← Lernkurven, Metriken, Modusvergleich
+│   └── how-to-push.md               ← Anleitung zum Git-Push mit PyCharm oder Terminal
 └── site/                            ← (von mkdocs build erzeugt)
 ```

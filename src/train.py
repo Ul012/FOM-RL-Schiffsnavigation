@@ -13,7 +13,7 @@ epsilon = 0.1
 episodes = 500
 
 # Umgebungskonfiguration
-mode = "random"
+mode = "static"
 grid_size = 5
 n_states = grid_size * grid_size
 n_actions = 4
