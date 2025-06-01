@@ -6,6 +6,10 @@ from config import ENV_MODE
 from navigation.environment.grid_environment import GridEnvironment
 import os
 from collections import deque
+import matplotlib.pyplot as plt
+
+# Konfiguration
+VISUALIZE = True
 
 # Q-Tabelle laden (optional nach ENV_MODE benannt)
 q_path = f"q_table_{ENV_MODE}.npy"
@@ -21,6 +25,7 @@ max_steps_per_episode = 50  # Abbruchbedingung nach x Schritten
 
 successes = 0
 total_rewards = []
+loop_aborts = 0
 
 for i in range(num_test_envs):
     env = GridEnvironment(mode=ENV_MODE)
@@ -28,7 +33,7 @@ for i in range(num_test_envs):
     done = False
     episode_reward = 0
     steps = 0
-    position_history = deque(maxlen=10)  # Zur Erkennung von Loops
+    position_history = deque(maxlen=10)
 
     while not done and steps < max_steps_per_episode:
         action = np.argmax(Q[state])
@@ -38,17 +43,14 @@ for i in range(num_test_envs):
         state = next_state
         steps += 1
 
-        # Position verfolgen
         pos = divmod(state, env.grid_size)
         position_history.append(pos)
 
-        # Schleifenverhalten erkennen und bestrafen
         if list(position_history).count(pos) > 6:
-            # Strafbewertung beim Loop-Abbruch, rein für die Auswertung,
-            # nicht fürs Lernen (weil evaluate_policy.py ja nicht trainiert)
             reward -= 15
             episode_reward += reward
             done = True
+            loop_aborts += 1
             print(f"Episode {i+1}: Abbruch wegen erkennbarer Schleife.")
 
     total_rewards.append(episode_reward)
@@ -58,3 +60,23 @@ for i in range(num_test_envs):
 print(f"Modus: {ENV_MODE}")
 print(f"Erfolgreiche Zielerreichung: {successes}/{num_test_envs} ({(successes/num_test_envs)*100:.1f}%)")
 print(f"Durchschnittlicher Reward: {np.mean(total_rewards):.2f}")
+print(f"Abbrüche wegen Schleifen: {loop_aborts}")
+
+# Optionale Visualisierung
+if VISUALIZE:
+    plt.figure(figsize=(6, 4))
+    plt.bar(["Erfolg", "Misserfolg"], [successes, num_test_envs - successes], color=["green", "red"])
+    plt.title("Zielerreichung in Testläufen")
+    plt.ylabel("Anzahl")
+    plt.grid(True, axis='y')
+    plt.tight_layout()
+    plt.show()
+
+    plt.figure(figsize=(6, 4))
+    plt.hist(total_rewards, bins=20, color="blue", alpha=0.7)
+    plt.title("Verteilung der Gesamtrewards")
+    plt.xlabel("Reward")
+    plt.ylabel("Häufigkeit")
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
