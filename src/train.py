@@ -13,7 +13,7 @@ epsilon = 0.1
 episodes = 500
 
 # Umgebungskonfiguration
-ENV_MODE = "random_start"  # Optionen: static, random_start, random_goal, random_obstacles
+from config import ENV_MODE # ENV_MODE = "random_start"  # Optionen: static, random_start, random_goal, random_obstacles
 grid_size = 5
 n_states = grid_size * grid_size
 n_actions = 4

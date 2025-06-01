@@ -8,7 +8,8 @@ from pathlib import Path
 from PIL import Image
 
 # === Konfiguration ===
-ENV_MODE = "static"           # "static", "random_start", "random_goal", "random_obstacles"
+from config import ENV_MODE
+# ENV_MODE = "static"           # "static", "random_start", "random_goal", "random_obstacles"
 EXPORT_FRAMES = False         # Optionaler Export von Bildern und GIF
 EXPORT_PATH = "export"        # Speicherort für Screenshots und Animation
 
