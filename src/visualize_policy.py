@@ -1,3 +1,5 @@
+# visualize_policy.py
+
 import pygame
 import numpy as np
 import sys
@@ -20,6 +22,8 @@ else:
     from navigation.environment.grid_environment import GridEnvironment as Env
 
 Q = np.load("q_table.npy")
+print("Q-Tabelle geladen: q_table.npy")
+
 env = Env()
 GRID_SIZE = env.grid_size
 CELL_SIZE = 80
@@ -27,7 +31,7 @@ WIDTH = HEIGHT = CELL_SIZE * GRID_SIZE
 
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("AGENTEN-PFAD NACH GELERNTER POLICY")
+pygame.display.set_caption(f"AGENTEN-PFAD NACH GELERNTER POLICY – Modus: {ENV_MODE}")
 font = pygame.font.SysFont("Segoe UI Emoji", 40)
 
 actions_map = {0: '↑', 1: '→', 2: '↓', 3: '←'}
