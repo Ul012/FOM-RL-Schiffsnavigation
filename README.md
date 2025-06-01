@@ -10,27 +10,52 @@ Dieses Projekt zeigt, wie ein Q-Learning-Agent ein Schiff durch eine Gitterwelt 
 - Q-Learning-Implementierung mit Trainingsschleife
 - Visualisierung der Policy und des Agentenlaufs
 - Dynamische oder statische Hindernisverteilung
+- Optionaler GIF- und PDF-Export zur Ergebnisdokumentation
 - Dokumentation mit MkDocs
 
 ---
 
 ## Setup
 
+### 1. Virtuelle Umgebung erstellen und aktivieren
+
 ```bash
-# Virtuelle Umgebung erstellen und aktivieren
 python -m venv venv
-venv\Scripts\activate          # oder: source venv/bin/activate
+venv\Scripts\activate          # Windows
+source venv/bin/activate         # macOS/Linux
+```
 
-# Abhängigkeiten installieren
+### 2. Abhängigkeiten installieren
+
+```bash
 pip install -r requirements.txt
+```
 
-# Training starten
+Falls Probleme mit `distutils` auftreten (Python 3.12), installiere zusätzlich manuell:
+
+```bash
+pip install setuptools wheel
+```
+
+### 3. Training starten
+
+```bash
 cd src
 python train.py
+```
 
-# Visualisierung starten
-python run_policy.py
+### 4. Visualisierung (Policy-Demo mit Pygame)
 
-# Dokumentation lokal anzeigen
+```bash
+python visualize_policy.py
+```
+
+Optional kannst du in `visualize_policy.py` den Parameter `EXPORT_FRAMES = True` setzen, um eine GIF- und PDF-Ausgabe zu erhalten.
+
+### 5. Dokumentation lokal anzeigen
+
+```bash
 mkdocs serve
 ```
+
+Die Seite ist danach unter [http://127.0.0.1:8000](http://127.0.0.1:8000) erreichbar.

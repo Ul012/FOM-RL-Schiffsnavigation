@@ -11,26 +11,43 @@ class GridEnvironment(gym.Env):
         self.grid_size = 5
         self.observation_space = spaces.Discrete(self.grid_size * self.grid_size)
         self.action_space = spaces.Discrete(4)  # 0=oben, 1=rechts, 2=unten, 3=links
-        self.start_pos = (0, 0)
 
         # Seed setzen, falls angegeben
         if seed is not None:
             random.seed(seed)
             np.random.seed(seed)
 
-        if mode == "random":
-            all_positions = [(i, j) for i in range(self.grid_size) for j in range(self.grid_size)]
-            # Startposition ist fix: (0, 0)
-            all_positions.remove(self.start_pos)
-            # Zielposition wird zufällig aus den übrigen Feldern gewählt
-            self.goal_pos = random.choice(all_positions)
-            all_positions.remove(self.goal_pos)
-            # Drei Gefahrenfelder werden zufällig gewählt (dürfen nicht Start oder Ziel sein)
-            self.hazards = random.sample(all_positions, k=3)
-        else:
-            self.goal_pos = (4, 4)
-            self.hazards = [(1, 1), (2, 3), (3, 1)]
+        # Positionen vorbereiten
+        all_positions = [(i, j) for i in range(self.grid_size) for j in range(self.grid_size)]
 
+        # Standardwerte
+        self.start_pos = (0, 0)
+        self.goal_pos = (4, 4)
+        self.hazards = [(1, 1), (2, 3), (3, 1)]
+
+        # Modus-spezifische Anpassungen
+        if mode == "random_start":
+            possible_starts = all_positions.copy()
+            possible_starts.remove(self.goal_pos)
+            for h in self.hazards:
+                if h in possible_starts:
+                    possible_starts.remove(h)
+            self.start_pos = random.choice(possible_starts)
+
+        elif mode == "random_goal":
+            possible_goals = all_positions.copy()
+            possible_goals.remove(self.start_pos)
+            for h in self.hazards:
+                if h in possible_goals:
+                    possible_goals.remove(h)
+            self.goal_pos = random.choice(possible_goals)
+
+        elif mode == "random_obstacles":
+            all_positions.remove(self.start_pos)
+            all_positions.remove(self.goal_pos)
+            self.hazards = random.sample(all_positions, k=3)
+
+        # State initialisieren
         self.state = self.pos_to_state(self.start_pos)
 
     def reset(self, seed=None, options=None):
@@ -58,7 +75,7 @@ class GridEnvironment(gym.Env):
         next_state = self.pos_to_state(next_pos)
         self.state = next_state
 
-        reward = -1  # standardmäßige Bewegungskosten
+        reward = -1  # Bewegungskosten
         terminated = False
 
         if next_pos == self.goal_pos:
@@ -69,5 +86,3 @@ class GridEnvironment(gym.Env):
             terminated = True
 
         return next_state, reward, terminated, False, {}
-
-

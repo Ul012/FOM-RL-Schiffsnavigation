@@ -1,6 +1,6 @@
 # Willkommen
 
-Dieses Projekt demonstriert, wie ein Reinforcement-Learning-Agent ein Schiff durch eine Gitterwelt navigiert.
+Mit diesem Projekt navigiert ein Reinforcement-Learning-Agent ein Schiff durch eine Gitterwelt.
 
 ## Ziele
 - Entwicklung eines Q-Learning-Agents

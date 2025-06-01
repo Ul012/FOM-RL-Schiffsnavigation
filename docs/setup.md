@@ -12,3 +12,4 @@ pip install -r requirements.txt
 # Trainingsskript starten
 cd src
 python train.py
+```

@@ -13,7 +13,7 @@ epsilon = 0.1
 episodes = 500
 
 # Umgebungskonfiguration
-mode = "static"
+ENV_MODE = "random_start"  # Optionen: static, random_start, random_goal, random_obstacles
 grid_size = 5
 n_states = grid_size * grid_size
 n_actions = 4
@@ -25,7 +25,7 @@ success_per_episode = []
 
 # Training
 for ep in range(episodes):
-    env = GridEnvironment(mode=mode)
+    env = GridEnvironment(mode=ENV_MODE)
     state, _ = env.reset()
     total_reward = 0
     done = False
