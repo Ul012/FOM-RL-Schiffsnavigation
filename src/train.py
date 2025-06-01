@@ -1,8 +1,18 @@
+# train.py
+
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '.')))
 
-from navigation.environment.grid_environment import GridEnvironment
+# from navigation.environment.grid_environment import GridEnvironment
+
+from config import ENV_MODE
+
+if ENV_MODE == "container":
+    from navigation.environment.container_environment import ContainerShipEnv as Env
+else:
+    from navigation.environment.grid_environment import GridEnvironment as Env
+
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -15,7 +25,8 @@ episodes = 500
 # Umgebungskonfiguration
 from config import ENV_MODE # ENV_MODE = "random_start"  # Optionen: static, random_start, random_goal, random_obstacles
 grid_size = 5
-n_states = grid_size * grid_size
+# n_states = grid_size * grid_size
+n_states = grid_size * grid_size * 2 if ENV_MODE == "container" else grid_size * grid_size
 n_actions = 4
 
 # Q-Tabelle und Logging-Listen
@@ -25,8 +36,12 @@ success_per_episode = []
 
 # Training
 for ep in range(episodes):
-    env = GridEnvironment(mode=ENV_MODE)
+    # env = GridEnvironment(mode=ENV_MODE)
+    env = Env() if ENV_MODE == "container" else Env(mode=ENV_MODE)
     state, _ = env.reset()
+    if ENV_MODE == "container":
+        x, y, loaded = state
+        state = x * grid_size * 2 + y * 2 + loaded
     total_reward = 0
     done = False
     success = 0
@@ -38,6 +53,9 @@ for ep in range(episodes):
             action = np.argmax(Q[state])
 
         next_state, reward, terminated, truncated, _ = env.step(action)
+        if ENV_MODE == "container":
+            x, y, loaded = next_state
+            next_state = x * grid_size * 2 + y * 2 + loaded
         done = terminated or truncated
 
         # Q-Wert aktualisieren

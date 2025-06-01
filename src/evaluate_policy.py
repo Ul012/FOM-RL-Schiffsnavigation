@@ -1,9 +1,13 @@
 # evaluate_policy.py
-# Ziel: Wie oft schafft der Agent es zum Ziel? → Test über z. B. 100 zufällige Karten.
+# Ziel: Wie oft schafft der Agent es zum Ziel? → Test über z.B. 100 zufällige Karten.
 
 import numpy as np
 from config import ENV_MODE
-from navigation.environment.grid_environment import GridEnvironment
+# from navigation.environment.grid_environment import GridEnvironment
+if ENV_MODE == "container":
+    from navigation.environment.container_environment import ContainerShipEnv as Env
+else:
+    from navigation.environment.grid_environment import GridEnvironment as Env
 import os
 from collections import deque
 import matplotlib.pyplot as plt
@@ -28,8 +32,12 @@ total_rewards = []
 loop_aborts = 0
 
 for i in range(num_test_envs):
-    env = GridEnvironment(mode=ENV_MODE)
+    # env = GridEnvironment(mode=ENV_MODE)
+    env = Env() if ENV_MODE == "container" else Env(mode=ENV_MODE)
     state, _ = env.reset()
+    if ENV_MODE == "container":
+        x, y, loaded = state
+        state = x * env.grid_size * 2 + y * 2 + loaded  # Zustand zu Index umwandeln
     done = False
     episode_reward = 0
     steps = 0
@@ -38,6 +46,9 @@ for i in range(num_test_envs):
     while not done and steps < max_steps_per_episode:
         action = np.argmax(Q[state])
         next_state, reward, terminated, truncated, _ = env.step(action)
+        if ENV_MODE == "container":
+            x, y, loaded = next_state
+            next_state = x * 5 * 2 + y * 2 + loaded
         done = terminated or truncated
         episode_reward += reward
         state = next_state
