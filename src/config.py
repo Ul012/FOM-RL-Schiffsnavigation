@@ -1,7 +1,7 @@
 # config.py
 
 # Umgebungsauswahl
-ENV_MODE = "random_goal"  # Optionen: static, random_start, random_goal, random_obstacles, container
+ENV_MODE = "container"  # Optionen: static, random_start, random_goal, random_obstacles, container
 
 # Grid-Größe (für grid-Umgebung)
 GRID_SIZE = 5

@@ -18,7 +18,14 @@ else:
 # Umgebung initialisieren
 env = Env(mode=ENV_MODE) if ENV_MODE != "container" else Env()
 grid_size = env.grid_size
-n_states = env.observation_space.n if hasattr(env.observation_space, 'n') else grid_size * grid_size
+
+# Zustandscodierung je nach Umgebung
+def obs_to_state(obs):
+    if ENV_MODE == "container":
+        return obs[0] * grid_size + obs[1] + (grid_size * grid_size) * obs[2]
+    return obs
+
+n_states = env.observation_space.n if hasattr(env.observation_space, 'n') else np.prod(env.observation_space.nvec)
 n_actions = env.action_space.n
 
 # Q-Tabelle initialisieren
@@ -28,7 +35,8 @@ success_per_episode = []
 
 # Training starten
 for ep in range(EPISODES):
-    state, _ = env.reset()
+    obs, _ = env.reset()
+    state = obs_to_state(obs)
     total_reward = 0
     done = False
     success = 0
@@ -39,10 +47,12 @@ for ep in range(EPISODES):
         else:
             action = np.argmax(Q[state])
 
-        next_state, reward, terminated, truncated, _ = env.step(action)
+        obs, reward, terminated, truncated, _ = env.step(action)
         done = terminated or truncated
+        next_state = obs_to_state(obs)
 
         Q[state, action] += ALPHA * (reward + GAMMA * np.max(Q[next_state]) - Q[state, action])
+
         state = next_state
         total_reward += reward
 

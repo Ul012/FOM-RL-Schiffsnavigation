@@ -10,6 +10,7 @@ class GridEnvironment(gym.Env):
 
     def __init__(self, mode="static", seed=None):
         super(GridEnvironment, self).__init__()
+        self.mode = mode
         self.grid_size = 5
         self.observation_space = spaces.Discrete(self.grid_size * self.grid_size)
         self.action_space = spaces.Discrete(4)  # 0=oben, 1=rechts, 2=unten, 3=links
@@ -54,6 +55,26 @@ class GridEnvironment(gym.Env):
 
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
+
+        all_positions = [(i, j) for i in range(self.grid_size) for j in range(self.grid_size)]
+
+        self.start_pos = (0, 0)
+        self.goal_pos = (4, 4)
+        self.hazards = [(1, 1), (2, 3), (3, 1)]
+
+        if self.mode == "random_start":
+            possible_starts = [pos for pos in all_positions if pos != self.goal_pos and pos not in self.hazards]
+            self.start_pos = random.choice(possible_starts)
+
+        elif self.mode == "random_goal":
+            possible_goals = [pos for pos in all_positions if pos != self.start_pos and pos not in self.hazards]
+            self.goal_pos = random.choice(possible_goals)
+
+        elif self.mode == "random_obstacles":
+            possible_hazards = [pos for pos in all_positions if pos != self.start_pos and pos != self.goal_pos]
+            self.hazards = random.sample(possible_hazards, k=3)
+
+        self.agent_position = self.start_pos
         self.state = self.pos_to_state(self.start_pos)
         return self.state, {}
 

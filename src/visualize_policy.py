@@ -24,7 +24,7 @@ else:
 Q = np.load("q_table.npy")
 print("Q-Tabelle geladen: q_table.npy")
 
-env = Env()
+env = Env(mode=ENV_MODE) if ENV_MODE != "container" else Env()
 GRID_SIZE = env.grid_size
 CELL_SIZE = 80
 WIDTH = HEIGHT = CELL_SIZE * GRID_SIZE
@@ -56,21 +56,26 @@ def draw_grid(agent_pos, save_frame=False):
             rect = pygame.Rect(j * CELL_SIZE, i * CELL_SIZE, CELL_SIZE, CELL_SIZE)
             pygame.draw.rect(screen, (200, 200, 200), rect, 1)
             pos = (i, j)
+
             if pos == agent_pos:
                 txt = font.render("🚢", True, color_map['agent'])
             elif pos == env.start_pos:
                 txt = font.render("🧭", True, color_map['start'])
-            elif hasattr(env, "goal_pos") and pos == env.goal_pos:
-                txt = font.render("🏁", True, color_map['goal'])
+            elif hasattr(env, "pickup_pos") and pos == env.pickup_pos:
+                txt = font.render("📤", True, color_map['goal'])
             elif hasattr(env, "dropoff_pos") and pos == env.dropoff_pos:
                 txt = font.render("📦", True, color_map['goal'])
+            elif hasattr(env, "goal_pos") and pos == env.goal_pos:
+                txt = font.render("🏁", True, color_map['goal'])
             elif pos in getattr(env, "hazards", []):
                 txt = font.render("🪨", True, color_map['hazard'])
             else:
                 state = obs_to_state((i, j, 0) if ENV_MODE == "container" else env.pos_to_state((i, j)))
                 best_action = np.argmax(Q[state])
                 txt = font.render(actions_map[best_action], True, (0, 0, 0))
+
             screen.blit(txt, (j * CELL_SIZE + 25, i * CELL_SIZE + 20))
+
     pygame.display.flip()
 
     if save_frame:

@@ -4,6 +4,7 @@
 import numpy as np
 from config import ENV_MODE
 from navigation.environment.grid_environment import GridEnvironment
+from navigation.environment.container_environment import ContainerShipEnv
 import os
 from collections import deque
 import matplotlib.pyplot as plt
@@ -15,6 +16,15 @@ VISUALIZE = True
 Q = np.load("q_table.npy")
 print("Q-Tabelle geladen: q_table.npy")
 
+# Umgebung laden
+env = ContainerShipEnv() if ENV_MODE == "container" else GridEnvironment(mode=ENV_MODE)
+
+# Zustandscodierung je nach Umgebung
+def obs_to_state(obs):
+    if ENV_MODE == "container":
+        return obs[0] * env.grid_size + obs[1] + (env.grid_size * env.grid_size) * obs[2]
+    return obs
+
 num_test_envs = 100
 max_steps_per_episode = 50  # Abbruchbedingung nach x Schritten
 
@@ -23,8 +33,8 @@ total_rewards = []
 loop_aborts = 0
 
 for i in range(num_test_envs):
-    env = GridEnvironment(mode=ENV_MODE)
-    state, _ = env.reset()
+    obs, _ = env.reset()
+    state = obs_to_state(obs)
     done = False
     episode_reward = 0
     steps = 0
@@ -32,13 +42,14 @@ for i in range(num_test_envs):
 
     while not done and steps < max_steps_per_episode:
         action = np.argmax(Q[state])
-        next_state, reward, terminated, truncated, _ = env.step(action)
+        obs, reward, terminated, truncated, _ = env.step(action)
+        next_state = obs_to_state(obs)
         done = terminated or truncated
         episode_reward += reward
         state = next_state
         steps += 1
 
-        pos = divmod(state, env.grid_size)
+        pos = (obs[0], obs[1]) if ENV_MODE == "container" else divmod(state, env.grid_size)
         position_history.append(pos)
 
         if list(position_history).count(pos) > 6:
