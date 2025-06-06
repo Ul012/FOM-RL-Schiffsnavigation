@@ -1,21 +1,27 @@
 # visualize_policy.py
 
-import pygame
-import numpy as np
 import sys
 import os
+
+# Projektstruktur für Import anpassen
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '.')))
+
+# Third Party
+import pygame
+import numpy as np
 import time
 import imageio
 from pathlib import Path
 from PIL import Image
 
-# === Konfiguration ===
+# Lokale Module
 from config import ENV_MODE
+
+# Konfiguration
 EXPORT_FRAMES = False
 EXPORT_PATH = "export"
 
-# Projektstruktur für Import anpassen
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '.')))
+# Umgebung je nach Modus
 if ENV_MODE == "container":
     from navigation.environment.container_environment import ContainerShipEnv as Env
 else:
@@ -37,7 +43,7 @@ font = pygame.font.SysFont("Segoe UI Emoji", 40)
 actions_map = {0: '↑', 1: '→', 2: '↓', 3: '←'}
 color_map = {
     'goal': (0, 200, 0),
-    'hazard': (200, 0, 0),
+    'obstacle': (200, 0, 0),
     'agent': (30, 144, 255),
     'start': (255, 140, 0)
 }
@@ -67,8 +73,8 @@ def draw_grid(agent_pos, save_frame=False):
                 txt = font.render("📦", True, color_map['goal'])
             elif hasattr(env, "goal_pos") and pos == env.goal_pos:
                 txt = font.render("🏁", True, color_map['goal'])
-            elif pos in getattr(env, "hazards", []):
-                txt = font.render("🪨", True, color_map['hazard'])
+            elif pos in getattr(env, "obstacles", []):
+                txt = font.render("🪨", True, color_map['obstacle'])
             else:
                 state = obs_to_state((i, j, 0) if ENV_MODE == "container" else env.pos_to_state((i, j)))
                 best_action = np.argmax(Q[state])

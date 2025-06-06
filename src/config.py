@@ -1,19 +1,19 @@
 # config.py
 
 # Umgebungsauswahl
-ENV_MODE = "container"  # Optionen: static, random_start, random_goal, random_obstacles, container
+ENV_MODE = "random_start"  # Optionen: static, random_start, random_goal, random_obstacles, container
 
 # Grid-Größe (für grid-Umgebung)
 GRID_SIZE = 5
 
 # Belohnung/Bestrafung
 REWARDS = {
-    "step": -0.1,
+    "step": -1,
     "goal": 10,
     "obstacle": -10,
     "loop_abort": -10,
     "timeout": -10,
-    "pickup": 10,
+    "pickup": 8,
     "dropoff": 20
 }
 # Q-Learning Parameter

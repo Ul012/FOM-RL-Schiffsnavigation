@@ -1,9 +1,19 @@
 # grid_environment.py
 
+import sys
+import os
+
+# Projektstruktur für Imports anpassen
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
+
+# Third-Party
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 import random
+
+# Lokale Module
+from src.config import REWARDS
 
 class GridEnvironment(gym.Env):
     metadata = {"render_modes": ["human"]}
@@ -26,13 +36,13 @@ class GridEnvironment(gym.Env):
         # Standardwerte
         self.start_pos = (0, 0)
         self.goal_pos = (4, 4)
-        self.hazards = [(1, 1), (2, 3), (3, 1)]
+        self.obstacles = [(1, 1), (2, 3), (3, 1)]
 
         # Modus-spezifische Anpassungen
         if mode == "random_start":
             possible_starts = all_positions.copy()
             possible_starts.remove(self.goal_pos)
-            for h in self.hazards:
+            for h in self.obstacles:
                 if h in possible_starts:
                     possible_starts.remove(h)
             self.start_pos = random.choice(possible_starts)
@@ -40,7 +50,7 @@ class GridEnvironment(gym.Env):
         elif mode == "random_goal":
             possible_goals = all_positions.copy()
             possible_goals.remove(self.start_pos)
-            for h in self.hazards:
+            for h in self.obstacles:
                 if h in possible_goals:
                     possible_goals.remove(h)
             self.goal_pos = random.choice(possible_goals)
@@ -48,7 +58,7 @@ class GridEnvironment(gym.Env):
         elif mode == "random_obstacles":
             all_positions.remove(self.start_pos)
             all_positions.remove(self.goal_pos)
-            self.hazards = random.sample(all_positions, k=3)
+            self.obstacles = random.sample(all_positions, k=3)
 
         # State initialisieren
         self.state = self.pos_to_state(self.start_pos)
@@ -60,19 +70,19 @@ class GridEnvironment(gym.Env):
 
         self.start_pos = (0, 0)
         self.goal_pos = (4, 4)
-        self.hazards = [(1, 1), (2, 3), (3, 1)]
+        self.obstacles = [(1, 1), (2, 3), (3, 1)]
 
         if self.mode == "random_start":
-            possible_starts = [pos for pos in all_positions if pos != self.goal_pos and pos not in self.hazards]
+            possible_starts = [pos for pos in all_positions if pos != self.goal_pos and pos not in self.obstacles]
             self.start_pos = random.choice(possible_starts)
 
         elif self.mode == "random_goal":
-            possible_goals = [pos for pos in all_positions if pos != self.start_pos and pos not in self.hazards]
+            possible_goals = [pos for pos in all_positions if pos != self.start_pos and pos not in self.obstacles]
             self.goal_pos = random.choice(possible_goals)
 
         elif self.mode == "random_obstacles":
-            possible_hazards = [pos for pos in all_positions if pos != self.start_pos and pos != self.goal_pos]
-            self.hazards = random.sample(possible_hazards, k=3)
+            possible_obstacles = [pos for pos in all_positions if pos != self.start_pos and pos != self.goal_pos]
+            self.obstacles = random.sample(possible_obstacles, k=3)
 
         self.agent_position = self.start_pos
         self.state = self.pos_to_state(self.start_pos)
@@ -98,14 +108,14 @@ class GridEnvironment(gym.Env):
         next_state = self.pos_to_state(next_pos)
         self.state = next_state
 
-        reward = -1  # Bewegungskosten
+        reward = REWARDS["step"]  # Bewegungskosten
         terminated = False
 
         if next_pos == self.goal_pos:
-            reward = 10
+            reward = REWARDS["goal"]
             terminated = True
-        elif next_pos in self.hazards:
-            reward = -10
+        elif next_pos in self.obstacles:
+            reward = REWARDS["obstacle"]
             terminated = True
 
         return next_state, reward, terminated, False, {}

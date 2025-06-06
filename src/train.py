@@ -2,12 +2,16 @@
 
 import sys
 import os
+
+# Projektstruktur für Imports anpassen (muss VOR Projektimporten stehen)
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
+
+# Third-Party
 import numpy as np
 import matplotlib.pyplot as plt
-from config import ENV_MODE, EPISODES, ALPHA, GAMMA, EPSILON
 
-# Projektstruktur für Imports anpassen
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '.')))
+# Lokale Module
+from config import ENV_MODE, EPISODES, ALPHA, GAMMA, EPSILON
 
 # Umgebung je nach Modus laden
 if ENV_MODE == "container":

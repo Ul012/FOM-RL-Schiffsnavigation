@@ -1,9 +1,19 @@
 # container_environment.py
 
+import sys
+import os
+
+# Projektstruktur für Imports anpassen
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
+
+# Third-Party
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 import random
+
+# Lokale Module
+from src.config import REWARDS
 
 class ContainerShipEnv(gym.Env):
     metadata = {"render_modes": ["human"]}
@@ -12,7 +22,7 @@ class ContainerShipEnv(gym.Env):
         super(ContainerShipEnv, self).__init__()
         self.grid_size = 5
         self.start_pos = (0, 0)
-        self.hazards = [(1, 3), (1, 2), (3, 1)]  # feste Hindernisse
+        self.obstacles = [(1, 3), (1, 2), (3, 1)]  # feste Hindernisse
         self.max_steps = 300  # erhöhte maximale Schrittzahl
 
         self.observation_space = spaces.MultiDiscrete([self.grid_size, self.grid_size, 2])
@@ -33,9 +43,9 @@ class ContainerShipEnv(gym.Env):
     def _set_random_positions(self):
         positions = [(i, j) for i in range(self.grid_size) for j in range(self.grid_size)]
         positions.remove(self.start_pos)
-        for hazard in self.hazards:
-            if hazard in positions:
-                positions.remove(hazard)
+        for obstacle in self.obstacles:
+            if obstacle in positions:
+                positions.remove(obstacle)
         self.pickup_pos = random.choice(positions)
         positions.remove(self.pickup_pos)
         self.dropoff_pos = random.choice(positions)
@@ -67,7 +77,7 @@ class ContainerShipEnv(gym.Env):
         self.agent_pos = (x, y)
         self.steps += 1
 
-        reward = -1  # Schrittstrafe reduziert
+        reward = REWARDS["step"]  # Schrittstrafe reduziert
         terminated = False
 
         obs = self._get_obs()
@@ -79,22 +89,22 @@ class ContainerShipEnv(gym.Env):
 
         # Schleifenbestrafung
         if self.visited_states[state_key] >= self.max_loop_count:
-            reward = -10
+            reward = REWARDS["loop_abort"]
             terminated = True
 
         # Timeout-Strafe
         if self.steps >= self.max_steps:
-            reward = -10
+            reward = REWARDS["timeout"]
             terminated = True
 
-        if self.agent_pos in self.hazards:
-            reward = -10
+        if self.agent_pos in self.obstacles:
+            reward = REWARDS["obstacle"]
             terminated = True
         elif not self.container_loaded and self.agent_pos == self.pickup_pos:
             self.container_loaded = True
-            reward = 8
+            reward = REWARDS["pickup"]
         elif self.container_loaded and self.agent_pos == self.dropoff_pos:
-            reward = 20
+            reward = REWARDS["dropoff"]
             terminated = True
             self.successful_dropoffs += 1
 
