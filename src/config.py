@@ -6,6 +6,16 @@ ENV_MODE = "container"  # Optionen: static, random_start, random_goal, random_ob
 # Grid-Größe (für grid-Umgebung)
 GRID_SIZE = 5
 
+# Belohnung/Bestrafung
+REWARDS = {
+    "step": -0.1,
+    "goal": 10,
+    "obstacle": -10,
+    "loop_abort": -10,
+    "timeout": -10,
+    "pickup": 10,
+    "dropoff": 20
+}
 # Q-Learning Parameter
 ALPHA = 0.1       # Lernrate
 GAMMA = 0.9       # Diskontierungsfaktor
