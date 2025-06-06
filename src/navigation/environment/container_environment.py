@@ -6,7 +6,7 @@ import os
 # Projektstruktur für Imports anpassen
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
 
-# Third-Party
+# Drittanbieter
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np

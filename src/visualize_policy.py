@@ -6,7 +6,7 @@ import os
 # Projektstruktur für Import anpassen
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '.')))
 
-# Third Party
+# Drittanbieter
 import pygame
 import numpy as np
 import time
@@ -27,6 +27,7 @@ if ENV_MODE == "container":
 else:
     from navigation.environment.grid_environment import GridEnvironment as Env
 
+# Laden der Q-Tabelle und Setup der Umgebung
 Q = np.load("q_table.npy")
 print("Q-Tabelle geladen: q_table.npy")
 

@@ -6,7 +6,7 @@ import os
 # Projektstruktur für Imports anpassen (muss VOR Projektimporten stehen)
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
 
-# Third-Party
+# Drittanbieter
 import numpy as np
 import matplotlib.pyplot as plt
 

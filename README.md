@@ -84,7 +84,18 @@ Danach erreichbar unter [http://127.0.0.1:8000](http://127.0.0.1:8000)
 | `random_start`| Zufälliger Startpunkt bei festem Ziel. Testet Robustheit beim Startverhalten. |
 | `random_goal` | Fester Startpunkt, aber zufälliges Ziel. Erfordert flexible Zielnavigation.   |
 | `random_obstacles` | Hindernisse variieren pro Episode. Erhöht Unsicherheit, erschwert Lernen. |
-| `container`   | Zwei-Ziel-Aufgabe: Container muss zuerst abgeholt, dann zum Ziel gebracht werden. |
+| `container`   | Zwei-Ziel-Aufgabe (Pickup/Dropoff) mit erweitertem Zustandsraum (Position + Ladezustand). |
+
+---
+
+## 🧠 Hinweis zu den Umgebungen
+
+Alle Modi basieren auf einem gemeinsamen 5x5-Gitter. Die Umgebungen unterscheiden sich jedoch strukturell:
+
+- **GridEnvironment** (`static`, `random_start`, etc.) nutzt einen eindimensionalen Zustandsraum (`Discrete(25)`) und ist ideal für klassische Q-Learning-Szenarien.
+- **ContainerShipEnv** (`container`) erweitert das Zustandsmodell um eine zusätzliche Dimension (`container_loaded`). Die Beobachtung besteht hier aus einem dreidimensionalen Tupel (`x`, `y`, geladen/unbeladen`). Dadurch entsteht ein **mehrdimensionaler Zustandsraum**, der die Komplexität und Lernanforderung deutlich erhöht.
+
+Die Trainings- und Visualisierungslogik passt sich automatisch dem gewählten Modus an.
 
 ---
 

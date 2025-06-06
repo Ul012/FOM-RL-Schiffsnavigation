@@ -1,12 +1,11 @@
 # config.py
 
-# Umgebungsauswahl
+# Umgebungskonfiguration
 ENV_MODE = "random_start"  # Optionen: static, random_start, random_goal, random_obstacles, container
+GRID_SIZE = 5              # Für grid-basierte Umgebung
+ACTIONS = 4                # 0 = oben, 1 = rechts, 2 = unten, 3 = links
 
-# Grid-Größe (für grid-Umgebung)
-GRID_SIZE = 5
-
-# Belohnung/Bestrafung
+# Rewardsystem
 REWARDS = {
     "step": -1,
     "goal": 10,
@@ -28,3 +27,5 @@ MAX_STEPS = 50              # Max. Schritte pro Episode in evaluate_policy
 LOOP_PENALTY = -15          # Strafreward bei Schleifenabbruch
 LOOP_THRESHOLD = 6          # Schleifenwiederholungen für Abbruch
 NUM_TEST_ENVS = 100         # Anzahl Testumgebungen bei evaluate_policy
+
+#

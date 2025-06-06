@@ -1,88 +1,91 @@
 # evaluate_policy.py
-# Ziel: Wie oft schafft der Agent es zum Ziel? → Test über z. B. 100 zufällige Karten.
 
+import sys
+import os
+
+# Projektstruktur für Import anpassen
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '.')))
+
+# Drittanbieter
 import numpy as np
-from config import ENV_MODE
+import matplotlib.pyplot as plt
+from collections import defaultdict
+
+# Lokale Module
+from config import ENV_MODE, EPISODES, MAX_STEPS, LOOP_THRESHOLD, LOOP_PENALTY, REWARDS
 from navigation.environment.grid_environment import GridEnvironment
 from navigation.environment.container_environment import ContainerShipEnv
-import os
-from collections import deque
-import matplotlib.pyplot as plt
 
-# Konfiguration
-VISUALIZE = True
-
-# Q-Tabelle laden (optional nach ENV_MODE benannt)
+# Laden der Q-Tabelle und Setup der Umgebung
 Q = np.load("q_table.npy")
-print("Q-Tabelle geladen: q_table.npy")
+print("Q-Tabelle geladen.")
 
-# Umgebung laden
+# Umgebung initialisieren
 env = ContainerShipEnv() if ENV_MODE == "container" else GridEnvironment(mode=ENV_MODE)
 
-# Zustandscodierung je nach Umgebung
-def obs_to_state(obs):
-    if ENV_MODE == "container":
-        return obs[0] * env.grid_size + obs[1] + (env.grid_size * env.grid_size) * obs[2]
-    return obs
+results = defaultdict(int)
+rewards_all = []
 
-num_test_envs = 100
-max_steps_per_episode = 50  # Abbruchbedingung nach x Schritten
-
-successes = 0
-total_rewards = []
-loop_aborts = 0
-
-for i in range(num_test_envs):
+for ep in range(EPISODES):
     obs, _ = env.reset()
-    state = obs_to_state(obs)
-    done = False
+    state = obs[0] * env.grid_size + obs[1] if ENV_MODE == "container" else obs
     episode_reward = 0
+    visited_states = {}
     steps = 0
-    position_history = deque(maxlen=10)
+    success = False
+    cause = "Timeout"
 
-    while not done and steps < max_steps_per_episode:
+    for _ in range(MAX_STEPS):
         action = np.argmax(Q[state])
-        obs, reward, terminated, truncated, _ = env.step(action)
-        next_state = obs_to_state(obs)
-        done = terminated or truncated
+        obs, reward, terminated, _, _ = env.step(action)
+        state = obs[0] * env.grid_size + obs[1] if ENV_MODE == "container" else obs
         episode_reward += reward
-        state = next_state
         steps += 1
 
-        pos = (obs[0], obs[1]) if ENV_MODE == "container" else divmod(state, env.grid_size)
-        position_history.append(pos)
+        visited_states[state] = visited_states.get(state, 0) + 1
+        if visited_states[state] >= LOOP_THRESHOLD:
+            cause = "Schleifenabbruch"
+            episode_reward += LOOP_PENALTY
+            break
 
-        if list(position_history).count(pos) > 6:
-            reward -= 15
-            episode_reward += reward
-            done = True
-            loop_aborts += 1
-            print(f"Episode {i+1}: Abbruch wegen erkennbarer Schleife.")
+        if terminated:
+            if reward == REWARDS["goal"] or reward == REWARDS["dropoff"]:
+                cause = "Ziel erreicht"
+                success = True
+            elif reward == REWARDS["obstacle"]:
+                cause = "Hindernis-Kollision"
+            break
 
-    total_rewards.append(episode_reward)
-    if reward == 10:
-        successes += 1
+    if not success and steps >= MAX_STEPS:
+        cause = "Timeout"
 
-print(f"Modus: {ENV_MODE}")
-print(f"Erfolgreiche Zielerreichung: {successes}/{num_test_envs} ({(successes/num_test_envs)*100:.1f}%)")
-print(f"Durchschnittlicher Reward: {np.mean(total_rewards):.2f}")
-print(f"Abbrüche wegen Schleifen: {loop_aborts}")
+    results[cause] += 1
+    rewards_all.append(episode_reward)
 
-# Optionale Visualisierung
-if VISUALIZE:
-    plt.figure(figsize=(6, 4))
-    plt.bar(["Erfolg", "Misserfolg"], [successes, num_test_envs - successes], color=["green", "red"])
-    plt.title(f"Zielerreichung in Testläufen ({ENV_MODE}-Modus)")
-    plt.ylabel("Anzahl")
-    plt.grid(True, axis='y')
-    plt.tight_layout()
-    plt.show()
+avg_reward = np.mean(rewards_all)
 
-    plt.figure(figsize=(6, 4))
-    plt.hist(total_rewards, bins=20, color="blue", alpha=0.7)
-    plt.title(f"Verteilung der Gesamtrewards ({ENV_MODE}-Modus)")
-    plt.xlabel("Reward")
-    plt.ylabel("Häufigkeit")
-    plt.grid(True)
-    plt.tight_layout()
-    plt.show()
+print(f"\nAuswertung ({EPISODES} Episoden, Modus: {ENV_MODE}):")
+for k, v in results.items():
+    print(f"{v}/{EPISODES} Episoden ({(v / EPISODES) * 100:.1f}%): {k}")
+print(f"\nDurchschnittlicher Reward: {avg_reward:.2f}")
+
+# Balkendiagramm mit Text
+plt.figure(figsize=(8, 5))
+bars = plt.bar(results.keys(), results.values(), color='steelblue')
+plt.title(f"Ausgang der Episoden ({ENV_MODE}-Modus)")
+plt.xlabel(f"Episoden-Endtyp (insg. {EPISODES} Episoden)")
+plt.ylabel("Anzahl")
+for bar in bars:
+    height = bar.get_height()
+    plt.text(bar.get_x() + bar.get_width() / 2.0, height + 0.5, f'{int(height)}', ha='center', va='bottom')
+plt.tight_layout()
+plt.show()
+
+# Reward-Histogramm
+plt.figure(figsize=(8, 5))
+plt.hist(rewards_all, bins=20, edgecolor='black')
+plt.title(f"Verteilung der Episoden-Rewards ({ENV_MODE}-Modus)")
+plt.xlabel("Reward")
+plt.ylabel("Häufigkeit")
+plt.tight_layout()
+plt.show()
