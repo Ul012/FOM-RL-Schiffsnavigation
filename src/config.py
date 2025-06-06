@@ -24,8 +24,5 @@ ACTIONS = 4       # Anzahl möglicher Aktionen (0 = hoch, 1 = rechts, 2 = runter
 
 # Evaluation
 MAX_STEPS = 50              # Max. Schritte pro Episode in evaluate_policy
-LOOP_PENALTY = -15          # Strafreward bei Schleifenabbruch
 LOOP_THRESHOLD = 6          # Schleifenwiederholungen für Abbruch
 NUM_TEST_ENVS = 100         # Anzahl Testumgebungen bei evaluate_policy
-
-#

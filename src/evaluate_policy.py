@@ -33,29 +33,31 @@ def obs_to_state(obs):
 results = defaultdict(int)
 rewards_all = []
 
-for ep in range(EPISODES):
-    obs, _ = env.reset()
-    state = obs_to_state(obs)
-    episode_reward = 0
-    visited_states = {}
-    steps = 0
-    success = False
+for ep in range(EPISODES):      # Eine Schleife über die Anzahl der zu testenden Episoden
+    obs, _ = env.reset()        # Setzt die Umgebung zurück. Der zweite Rückgabewert ( _ ) wird ignoriert.
+    state = obs_to_state(obs)   # Wandelt die Beobachtung in einen diskreten Zustand (state) für die Q-Tabelle um
+    episode_reward = 0          # Zählt die Gesamtbelohnung innerhalb der Episode
+    visited_states = {}         # Ein Dictionary, das zählt, wie oft ein Zustand besucht wurde — zur Schleifenerkennung
+    steps = 0                   # Schrittzähler innerhalb der aktuellen Episode
+    success = False             # Flag, ob das Ziel erfolgreich erreicht wurde
     cause = "Timeout"
 
-    for _ in range(MAX_STEPS):
-        action = np.argmax(Q[state])
-        obs, reward, terminated, _, _ = env.step(action)
+    for _ in range(MAX_STEPS):                              # Innere Schleife: Schritte innerhalb einer Episode. Führt die Aktion bis zum Abbruch aus (maximal MAX_STEPS Schritte pro Episode)
+        action = np.argmax(Q[state])                        # Wähle die beste (maximal bewertete) Aktion aus der Q-Tabelle für den aktuellen Zustand.
+        obs, reward, terminated, _, _ = env.step(action)    # Führe die Aktion in der Umgebung aus. Rückgabe: neue Beobachtung, Belohnung, Terminationsflag
         state = obs_to_state(obs)
-        episode_reward += reward
-        steps += 1
+        episode_reward += reward                            # Die Belohnung für den aktuellen Schritt wird zur Gesamtbelohnung addiert
+        steps += 1                                          # Schrittzähler hochzählen
 
-        visited_states[state] = visited_states.get(state, 0) + 1
-        if visited_states[state] >= LOOP_THRESHOLD:
-            cause = "Schleifenabbruch"
-            episode_reward += LOOP_PENALTY
+        visited_states[state] = visited_states.get(state, 0) + 1    # Schleifenerkennung (gegen endlose Wiederholungen)
+        if visited_states[state] >= LOOP_THRESHOLD:                 # Wenn der Zustand zu oft besucht wurde, liegt vermutlich eine Schleife vor.
+            print(f"[EP {ep}] Schleifenabbruch bei state {state}")  # Debugging
+            cause = "Schleifenabbruch"                              # Ursache aktualisieren, Strafe für Schleife anwenden, Episode beenden
+            episode_reward += REWARDS["loop_abort"]
             break
 
         if terminated:
+            print(f"[EP {ep}] terminated=True, reward={reward}")  # Debugging
             if reward == REWARDS["goal"] or reward == REWARDS["dropoff"]:
                 cause = "Ziel erreicht"
                 success = True
@@ -64,6 +66,7 @@ for ep in range(EPISODES):
             break
 
     if not success and steps >= MAX_STEPS:
+        print(f"[EP {ep}] Timeout erreicht nach {steps} Schritten")  # Debugging
         cause = "Timeout"
 
     results[cause] += 1
