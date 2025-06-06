@@ -22,6 +22,7 @@ from config import (ENV_MODE, MAX_STEPS, GRID_SIZE, Q_TABLE_PATH,
 from navigation.environment.grid_environment import GridEnvironment
 from navigation.environment.container_environment import ContainerShipEnv
 
+
 # ============================================================================
 # Hilfsfunktionen
 # ============================================================================
@@ -61,6 +62,7 @@ def setup_export():
     """Export-Ordner erstellen"""
     if EXPORT_PDF:
         Path(EXPORT_PATH).mkdir(exist_ok=True)
+
 
 # ============================================================================
 # Visualisierung
@@ -120,12 +122,14 @@ def draw_grid(screen, font, env, agent_pos, Q):
 
     pygame.display.flip()
 
+
 def save_screenshot(screen):
     """Screenshot als PDF speichern"""
     if EXPORT_PDF:
-        screenshot_path = f"{EXPORT_PATH}/agent_final_position.png"
+        screenshot_path = f"{EXPORT_PATH}/visualize_policy_final_position.png"
         pygame.image.save(screen, screenshot_path)
         print(f"Screenshot gespeichert: {screenshot_path}")
+
 
 # ============================================================================
 # Hauptfunktion
@@ -203,6 +207,7 @@ def run_agent():
             running = False
 
     pygame.quit()
+
 
 # ============================================================================
 # Ausführung
