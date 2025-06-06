@@ -6,6 +6,7 @@
 
 import sys
 import os
+from pathlib import Path
 
 # Projektstruktur für Import anpassen
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '.')))
@@ -16,23 +17,27 @@ import matplotlib.pyplot as plt
 from collections import defaultdict
 
 # Lokale Module
-from config import ENV_MODE, EPISODES, MAX_STEPS, LOOP_THRESHOLD, REWARDS
+from config import (ENV_MODE, EPISODES, MAX_STEPS, LOOP_THRESHOLD, REWARDS,
+                    Q_TABLE_PATH, EXPORT_PDF, EXPORT_PATH)
 from navigation.environment.grid_environment import GridEnvironment
 from navigation.environment.container_environment import ContainerShipEnv
+
 
 # ============================================================================
 # Hilfsfunktionen
 # ============================================================================
 
-# Initialisierung der Umgebung
 def initialize_environment():
+    """Umgebung initialisieren"""
     env = ContainerShipEnv() if ENV_MODE == "container" else GridEnvironment(mode=ENV_MODE)
     grid_size = env.grid_size
     print(f"Umgebung initialisiert: {ENV_MODE}-Modus, Grid-Größe: {grid_size}x{grid_size}")
     return env, grid_size
 
+
 # Q-Tabelle laden
-def load_q_table(filepath="q_table.npy"):
+
+def load_q_table(filepath=Q_TABLE_PATH):
     try:
         Q = np.load(filepath)
         print(f"Q-Tabelle geladen: {filepath}")
@@ -41,33 +46,17 @@ def load_q_table(filepath="q_table.npy"):
         print(f"FEHLER: Q-Tabelle nicht gefunden: {filepath}")
         return None
 
+
 # Zustandscodierung je nach Umgebung
+
 def obs_to_state(obs, env_mode=ENV_MODE, grid_size=None):
     if env_mode == "container":
         return obs[0] * grid_size + obs[1] + (grid_size * grid_size) * obs[2]
     return obs
 
-# Debug-Informationen für die erste Episode
-def print_debug_info(env, episode=0, obs=None, state=None):
-    if episode == 0:
-        print(f"\n=== EPISODE {episode} DEBUG ===")
-        if obs is not None:
-            print(f"Start Obs: {obs}")
-        if state is not None:
-            print(f"Start State: {state}")
-
-        if hasattr(env, 'agent_pos'):
-            print(f"Agent Position: {env.agent_pos}")
-
-        if hasattr(env, 'goal_pos'):
-            print(f"Goal Position: {env.goal_pos}")
-        elif ENV_MODE == "container":
-            print(f"Pickup Position: {env.pickup_pos}")
-            print(f"Dropoff Position: {env.dropoff_pos}")
-            print(f"Container Loaded: {env.container_loaded}")
-            print(f"Obstacles: {env.obstacles}")
 
 # Klassifizierung des Ergebnisses einer Episode
+
 def classify_episode_result(reward, cause, episode_reward, env_mode):
     success = False
 
@@ -94,6 +83,18 @@ def classify_episode_result(reward, cause, episode_reward, env_mode):
 
     return cause, success
 
+
+# Export-Ordner erstellen
+
+def setup_export():
+    if EXPORT_PDF:
+        Path(EXPORT_PATH).mkdir(exist_ok=True)
+
+
+# ============================================================================
+# Visualisierungsfunktionen
+# ============================================================================
+
 # Balkendiagramm für Erfolg vs. Misserfolg
 
 def create_success_plot(results_solved, env_mode):
@@ -119,9 +120,17 @@ def create_success_plot(results_solved, env_mode):
                  f'{int(height)}', ha='center', va='bottom')
 
     plt.tight_layout()
+
+    # PDF Export
+    if EXPORT_PDF:
+        plt.savefig(f"{EXPORT_PATH}/evaluate_policy_success_rate.pdf", format='pdf', bbox_inches='tight')
+        print(f"Success Rate Plot gespeichert: {EXPORT_PATH}/evaluate_policy_success_rate.pdf")
+
     plt.show()
 
+
 # Reward-Histogramm
+
 def create_reward_histogram(rewards_all, env_mode):
     avg_reward = np.mean(rewards_all)
 
@@ -134,17 +143,26 @@ def create_reward_histogram(rewards_all, env_mode):
                 label=f'Durchschnitt: {avg_reward:.2f}')
     plt.legend()
     plt.tight_layout()
+
+    # PDF Export
+    if EXPORT_PDF:
+        plt.savefig(f"{EXPORT_PATH}/evaluate_policy_reward_histogram.pdf", format='pdf', bbox_inches='tight')
+        print(f"Reward Histogram gespeichert: {EXPORT_PATH}/evaluate_policy_reward_histogram.pdf")
+
     plt.show()
 
+
 # ============================================================================
-# HAUPTFUNKTION
+# Hauptfunktion
 # ============================================================================
 
+# Evaluiert die trainierte Policy über mehrere Episoden
+
 def evaluate_policy():
-    """Evaluiert die trainierte Policy über mehrere Episoden."""
     # Initialisierung
     env, grid_size = initialize_environment()
     Q = load_q_table()
+    setup_export()
 
     if Q is None:
         return
@@ -165,9 +183,6 @@ def evaluate_policy():
         goal_reached = False
         loop_detected = False
 
-        # Debug-Info für erste Episode
-        print_debug_info(env, episode, obs, state)
-
         # Episode durchführen
         for step in range(MAX_STEPS):
             action = np.argmax(Q[state])
@@ -180,8 +195,6 @@ def evaluate_policy():
             if ENV_MODE != "container":
                 visited_states[next_state] = visited_states.get(next_state, 0) + 1
                 if visited_states[next_state] >= LOOP_THRESHOLD:
-                    if episode < 5:
-                        print(f"[EP {episode}] Schleifenabbruch bei state {next_state}")
                     cause = "Schleifenabbruch"
                     loop_detected = True
                     episode_reward += REWARDS["loop_abort"]
@@ -203,10 +216,6 @@ def evaluate_policy():
             state = next_state
 
             if terminated:
-                if episode < 5:
-                    print(
-                        f"[EP {episode}] terminated=True, final_reward={reward}, total_reward={episode_reward}, steps={steps}")
-
                 # Klassifizierung basierend auf letztem Reward
                 if not goal_reached and not loop_detected:
                     cause, _ = classify_episode_result(reward, cause, episode_reward, ENV_MODE)
@@ -214,8 +223,6 @@ def evaluate_policy():
 
         # Timeout-Check
         if not terminated and steps >= MAX_STEPS:
-            if episode < 5:
-                print(f"[EP {episode}] Timeout nach {steps} Schritten")
             cause = "Timeout"
             episode_reward += REWARDS["timeout"]
 
@@ -232,11 +239,6 @@ def evaluate_policy():
         results_solved["solved episode" if success else "failed episode"] += 1
         rewards_all.append(episode_reward)
 
-        # Debug für erste Episoden
-        if episode < 5:
-            print(
-                f"[EP {episode}] Endergebnis: {cause}, Total Reward: {episode_reward}, Steps: {steps}, Success: {success}")
-
     # Ergebnisse ausgeben
     print_results(results_cause, results_solved, rewards_all)
 
@@ -245,8 +247,9 @@ def evaluate_policy():
     create_reward_histogram(rewards_all, ENV_MODE)
 
 
+# Evaluationsergebnisse ausgeben
+
 def print_results(results_cause, results_solved, rewards_all):
-    """Druckt die Evaluationsergebnisse."""
     avg_reward = np.mean(rewards_all)
 
     print(f"\n" + "=" * 60)
@@ -271,10 +274,12 @@ def print_results(results_cause, results_solved, rewards_all):
     print(f"  Maximum: {max(rewards_all):.2f}")
     print(f"  Median: {np.median(rewards_all):.2f}")
 
-    print(f"\nSanity Check: {total_episodes} von {EPISODES} Episoden erfasst")
+    if EXPORT_PDF:
+        print(f"\nPDF-Exports gespeichert in: {EXPORT_PATH}")
+
 
 # ============================================================================
-# AUSFÜHRUNG
+# Ausführung
 # ============================================================================
 
 if __name__ == "__main__":
