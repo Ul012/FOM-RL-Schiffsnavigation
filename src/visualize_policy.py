@@ -15,24 +15,31 @@ from pathlib import Path
 from PIL import Image
 
 # Lokale Module
-from config import ENV_MODE
+from config import ENV_MODE, REWARDS
+from navigation.environment.grid_environment import GridEnvironment
+from navigation.environment.container_environment import ContainerShipEnv
 
 # Konfiguration
 EXPORT_FRAMES = False
 EXPORT_PATH = "export"
 
-# Umgebung je nach Modus
-if ENV_MODE == "container":
-    from navigation.environment.container_environment import ContainerShipEnv as Env
-else:
-    from navigation.environment.grid_environment import GridEnvironment as Env
+# Umgebung initialisieren
+env = ContainerShipEnv() if ENV_MODE == "container" else GridEnvironment(mode=ENV_MODE)
+grid_size = env.grid_size
 
-# Laden der Q-Tabelle und Setup der Umgebung
+# Q-Tabelle laden
 Q = np.load("q_table.npy")
 print("Q-Tabelle geladen: q_table.npy")
 
-env = Env(mode=ENV_MODE) if ENV_MODE != "container" else Env()
-GRID_SIZE = env.grid_size
+n_actions = env.action_space.n
+
+# Zustandscodierung je nach Umgebung
+def obs_to_state(obs):
+    if ENV_MODE == "container":
+        return obs[0] * grid_size + obs[1] + (grid_size * grid_size) * obs[2]
+    return obs
+
+GRID_SIZE = grid_size
 CELL_SIZE = 80
 WIDTH = HEIGHT = CELL_SIZE * GRID_SIZE
 
@@ -50,11 +57,6 @@ color_map = {
 }
 
 frames = []
-
-def obs_to_state(obs):
-    if ENV_MODE == "container":
-        return obs[0] * GRID_SIZE + obs[1]
-    return obs
 
 def draw_grid(agent_pos, save_frame=False):
     screen.fill((224, 247, 255))

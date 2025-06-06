@@ -16,19 +16,26 @@ from config import ENV_MODE, EPISODES, MAX_STEPS, LOOP_THRESHOLD, LOOP_PENALTY, 
 from navigation.environment.grid_environment import GridEnvironment
 from navigation.environment.container_environment import ContainerShipEnv
 
-# Laden der Q-Tabelle und Setup der Umgebung
-Q = np.load("q_table.npy")
-print("Q-Tabelle geladen.")
-
 # Umgebung initialisieren
 env = ContainerShipEnv() if ENV_MODE == "container" else GridEnvironment(mode=ENV_MODE)
+grid_size = env.grid_size
+
+# Q-Tabelle laden
+Q = np.load("q_table.npy")
+print("Q-Tabelle geladen: q_table.npy")
+
+# Zustandscodierung je nach Umgebung
+def obs_to_state(obs):
+    if ENV_MODE == "container":
+        return obs[0] * env.grid_size + obs[1] + (env.grid_size * env.grid_size) * obs[2]
+    return obs
 
 results = defaultdict(int)
 rewards_all = []
 
 for ep in range(EPISODES):
     obs, _ = env.reset()
-    state = obs[0] * env.grid_size + obs[1] if ENV_MODE == "container" else obs
+    state = obs_to_state(obs)
     episode_reward = 0
     visited_states = {}
     steps = 0
@@ -38,7 +45,7 @@ for ep in range(EPISODES):
     for _ in range(MAX_STEPS):
         action = np.argmax(Q[state])
         obs, reward, terminated, _, _ = env.step(action)
-        state = obs[0] * env.grid_size + obs[1] if ENV_MODE == "container" else obs
+        state = obs_to_state(obs)
         episode_reward += reward
         steps += 1
 

@@ -11,16 +11,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Lokale Module
-from config import ENV_MODE, EPISODES, ALPHA, GAMMA, EPSILON
-
-# Umgebung je nach Modus laden
-if ENV_MODE == "container":
-    from navigation.environment.container_environment import ContainerShipEnv as Env
-else:
-    from navigation.environment.grid_environment import GridEnvironment as Env
+from config import ENV_MODE, EPISODES, MAX_STEPS, LOOP_THRESHOLD, LOOP_PENALTY, ALPHA, GAMMA, EPSILON, ACTIONS, REWARDS
+from navigation.environment.grid_environment import GridEnvironment
+from navigation.environment.container_environment import ContainerShipEnv
 
 # Umgebung initialisieren
-env = Env(mode=ENV_MODE) if ENV_MODE != "container" else Env()
+env = ContainerShipEnv() if ENV_MODE == "container" else GridEnvironment(mode=ENV_MODE)
 grid_size = env.grid_size
 
 # Zustandscodierung je nach Umgebung
@@ -29,6 +25,7 @@ def obs_to_state(obs):
         return obs[0] * grid_size + obs[1] + (grid_size * grid_size) * obs[2]
     return obs
 
+# Zustands- und Aktionsraum ermitteln
 n_states = env.observation_space.n if hasattr(env.observation_space, 'n') else np.prod(env.observation_space.nvec)
 n_actions = env.action_space.n
 
