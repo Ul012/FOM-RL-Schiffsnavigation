@@ -11,7 +11,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Lokale Module
-from config import ENV_MODE, EPISODES, MAX_STEPS, LOOP_THRESHOLD, LOOP_PENALTY, ALPHA, GAMMA, EPSILON, ACTIONS, REWARDS
+from config import ENV_MODE, EPISODES, MAX_STEPS, LOOP_THRESHOLD, ALPHA, GAMMA, EPSILON, ACTIONS, REWARDS
 from navigation.environment.grid_environment import GridEnvironment
 from navigation.environment.container_environment import ContainerShipEnv
 

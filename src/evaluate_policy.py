@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 from collections import defaultdict
 
 # Lokale Module
-from config import ENV_MODE, EPISODES, MAX_STEPS, LOOP_THRESHOLD, LOOP_PENALTY, REWARDS
+from config import ENV_MODE, EPISODES, MAX_STEPS, LOOP_THRESHOLD, REWARDS
 from navigation.environment.grid_environment import GridEnvironment
 from navigation.environment.container_environment import ContainerShipEnv
 
