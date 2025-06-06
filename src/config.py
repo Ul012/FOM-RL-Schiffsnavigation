@@ -71,6 +71,13 @@ FIGURE_SIZE = (10, 6)  # Plot-Größe
 DPI_SETTING = 100  # Auflösung für gespeicherte Plots
 
 # ============================================================================
+# Export Parameter
+# ============================================================================
+
+EXPORT_PDF = True  # PDF-Export für Visualisierungen
+EXPORT_PATH = "exports/"  # Pfad für exportierte Dateien
+
+# ============================================================================
 # Debug Parameter
 # ============================================================================
 
