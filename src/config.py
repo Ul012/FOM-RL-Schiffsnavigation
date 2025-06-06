@@ -1,11 +1,17 @@
 # config.py
 
+# ============================================================================
 # Umgebungskonfiguration
-ENV_MODE = "random_goal"  # Optionen: static, random_start, random_goal, random_obstacles, container
-GRID_SIZE = 5              # Für grid-basierte Umgebung
-ACTIONS = 4                # 0 = oben, 1 = rechts, 2 = unten, 3 = links
+# ============================================================================
 
+ENV_MODE = "random_goal"  # Optionen: static, random_start, random_goal, random_obstacles, container
+GRID_SIZE = 5
+ACTIONS = 4  # 0 = oben, 1 = rechts, 2 = unten, 3 = links
+
+# ============================================================================
 # Rewardsystem
+# ============================================================================
+
 REWARDS = {
     "step": -1,
     "goal": 10,
@@ -15,14 +21,58 @@ REWARDS = {
     "pickup": 8,
     "dropoff": 20
 }
-# Q-Learning Parameter
-ALPHA = 0.1       # Lernrate
-GAMMA = 0.9       # Diskontierungsfaktor
-EPSILON = 0.1     # Explorationsrate
-EPISODES = 500    # Trainings-Episoden
-ACTIONS = 4       # Anzahl möglicher Aktionen (0 = hoch, 1 = rechts, 2 = runter, 3 = links)
 
-# Evaluation
-MAX_STEPS = 50              # Max. Schritte pro Episode in evaluate_policy
-LOOP_THRESHOLD = 6          # Schleifenwiederholungen für Abbruch
-NUM_TEST_ENVS = 100         # Anzahl Testumgebungen bei evaluate_policy
+# ============================================================================
+# Q-Learning Parameter
+# ============================================================================
+
+ALPHA = 0.1  # Lernrate
+GAMMA = 0.9  # Diskontierungsfaktor
+EPSILON = 0.1  # Explorationsrate
+EPISODES = 500  # Trainings-Episoden
+
+# ============================================================================
+# Training Parameter
+# ============================================================================
+
+MAX_STEPS = 50  # Max. Schritte pro Episode
+LOOP_THRESHOLD = 6  # Schleifenwiederholungen für Abbruch
+
+# ============================================================================
+# Evaluation Parameter
+# ============================================================================
+
+NUM_TEST_ENVS = 100  # Anzahl Testumgebungen
+EVAL_EPISODES = 100  # Anzahl Episoden für Evaluation
+EVAL_MAX_STEPS = 100  # Max. Schritte pro Episode in Evaluation
+
+# ============================================================================
+# Dateipfade
+# ============================================================================
+
+Q_TABLE_PATH = "q_table.npy"
+RESULTS_PATH = "results/"
+PLOTS_PATH = "plots/"
+
+# ============================================================================
+# Visualisierung Parameter
+# ============================================================================
+
+SHOW_VALUES = True  # Q-Werte in Heatmaps anzeigen
+COLORMAP_STYLE = "viridis"  # Colormap für Heatmaps
+VISUALIZATION_DELAY = 0.5  # Verzögerung zwischen Schritten (Sekunden)
+
+CELL_SIZE = 80  # Größe einer Grid-Zelle in Pixeln
+FRAME_DELAY = 0.4  # Verzögerung zwischen Frames (Sekunden)
+ARROW_SCALE = 0.3  # Größe der Policy-Pfeile
+SHOW_GRID_LINES = True  # Grid-Linien in Visualisierungen
+
+FIGURE_SIZE = (10, 6)  # Plot-Größe
+DPI_SETTING = 100  # Auflösung für gespeicherte Plots
+
+# ============================================================================
+# Debug Parameter
+# ============================================================================
+
+DEBUG_MODE = False  # Debug-Ausgaben aktivieren
+VERBOSE_TRAINING = True  # Detaillierte Training-Ausgaben
