@@ -6,6 +6,7 @@
 
 import sys
 import os
+from pathlib import Path
 
 # Projektstruktur für Import anpassen
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
@@ -16,8 +17,9 @@ import matplotlib.pyplot as plt
 from collections import defaultdict
 
 # Lokale Module
-from config import (ENV_MODE, EPISODES, MAX_STEPS, LOOP_THRESHOLD, ALPHA, GAMMA, EPSILON,
-                    ACTIONS, REWARDS, GRID_SIZE, NUM_TEST_ENVS)
+from config import (ENV_MODE, EPISODES, MAX_STEPS, ALPHA, GAMMA, EPSILON,
+                    ACTIONS, REWARDS, GRID_SIZE, Q_TABLE_PATH,
+                    EXPORT_PDF, EXPORT_PATH)
 from navigation.environment.grid_environment import GridEnvironment
 from navigation.environment.container_environment import ContainerShipEnv
 
@@ -26,23 +28,23 @@ from navigation.environment.container_environment import ContainerShipEnv
 # Hilfsfunktionen
 # ============================================================================
 
-# Initialisierung der Umgebung
 def initialize_environment():
+    """Umgebung initialisieren"""
     env = ContainerShipEnv() if ENV_MODE == "container" else GridEnvironment(mode=ENV_MODE)
     grid_size = env.grid_size
     print(f"Umgebung initialisiert: {ENV_MODE}-Modus, Grid-Größe: {grid_size}x{grid_size}")
     return env, grid_size
 
 
-# Zustandscodierung je nach Umgebung
 def obs_to_state(obs, env_mode=ENV_MODE, grid_size=None):
+    """Zustandscodierung je nach Umgebung"""
     if env_mode == "container":
         return obs[0] * grid_size + obs[1] + (grid_size * grid_size) * obs[2]
     return obs
 
 
-# Q-Tabelle initialisieren
 def initialize_q_table(env):
+    """Q-Tabelle initialisieren"""
     n_states = env.observation_space.n if hasattr(env.observation_space, 'n') else np.prod(env.observation_space.nvec)
     n_actions = env.action_space.n
     Q = np.zeros((n_states, n_actions))
@@ -50,46 +52,45 @@ def initialize_q_table(env):
     return Q, n_states, n_actions
 
 
-# Epsilon-greedy Aktionsauswahl
 def select_action(Q, state, epsilon, n_actions):
+    """Epsilon-greedy Aktionsauswahl"""
     if np.random.rand() < epsilon:
         return np.random.choice(n_actions)
     else:
         return np.argmax(Q[state])
 
 
-# Q-Wert Update (Q-Learning)
 def update_q_value(Q, state, action, reward, next_state, alpha=ALPHA, gamma=GAMMA):
+    """Q-Wert Update (Q-Learning)"""
     Q[state, action] += alpha * (reward + gamma * np.max(Q[next_state]) - Q[state, action])
 
 
-# Erfolgserkennung je nach Umgebung
 def check_success(reward, env_mode):
+    """Erfolgserkennung je nach Umgebung"""
     if env_mode == "container":
         return reward == REWARDS["dropoff"]
     else:  # Grid-Environment
         return reward == REWARDS["goal"]
 
 
-# Debug-Informationen für die ersten Episoden
-def print_debug_info(episode, state, action, reward, next_state, total_reward, success):
-    if episode < 5:
-        print(f"[EP {episode}] State: {state}, Action: {action}, Reward: {reward}, "
-              f"Next State: {next_state}, Total: {total_reward:.2f}, Success: {success}")
-
-
-# Q-Tabelle speichern
-def save_q_table(Q, filepath="q_table.npy"):
+def save_q_table(Q, filepath=Q_TABLE_PATH):
+    """Q-Tabelle speichern"""
     np.save(filepath, Q)
     print(f"Q-Tabelle gespeichert: {filepath}")
+
+
+def setup_export():
+    """Export-Ordner erstellen"""
+    if EXPORT_PDF:
+        Path(EXPORT_PATH).mkdir(exist_ok=True)
 
 
 # ============================================================================
 # Visualisierungsfunktionen
 # ============================================================================
 
-# Lernkurve mit Moving Average
 def create_learning_curve(rewards_per_episode, env_mode, window_size=20):
+    """Lernkurve mit Moving Average"""
     plt.figure(figsize=(12, 6))
 
     # Raw Rewards
@@ -107,16 +108,22 @@ def create_learning_curve(rewards_per_episode, env_mode, window_size=20):
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
+
+    # PDF Export
+    if EXPORT_PDF:
+        plt.savefig(f"{EXPORT_PATH}/train_learning_curve.pdf", format='pdf', bbox_inches='tight')
+        print(f"Learning Curve gespeichert: {EXPORT_PATH}/train_learning_curve.pdf")
+
     plt.show()
 
 
-# Erfolgskurve
 def create_success_curve(success_per_episode, env_mode):
+    """Erfolgskurve"""
     plt.figure(figsize=(12, 4))
     plt.plot(success_per_episode, label="Ziel erreicht", color='green', alpha=0.7, linewidth=1)
 
     # Moving Average für Erfolgsrate
-    window_size = min(max(10, EPISODES // 20), len(success_per_episode) // 10)  # Dynamische Fenstergröße
+    window_size = min(max(10, EPISODES // 20), len(success_per_episode) // 10)
     if len(success_per_episode) >= window_size:
         success_moving_avg = np.convolve(success_per_episode, np.ones(window_size) / window_size, mode='valid')
         plt.plot(range(window_size - 1, len(success_per_episode)), success_moving_avg,
@@ -128,11 +135,17 @@ def create_success_curve(success_per_episode, env_mode):
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
+
+    # PDF Export
+    if EXPORT_PDF:
+        plt.savefig(f"{EXPORT_PATH}/train_success_curve.pdf", format='pdf', bbox_inches='tight')
+        print(f"Success Curve gespeichert: {EXPORT_PATH}/train_success_curve.pdf")
+
     plt.show()
 
 
-# Trainingsstatistiken
 def create_training_statistics(rewards_per_episode, success_per_episode, env_mode):
+    """Trainingsstatistiken"""
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(15, 10))
 
     # Reward-Histogramm
@@ -154,7 +167,7 @@ def create_training_statistics(rewards_per_episode, success_per_episode, env_mod
     ax2.grid(True, alpha=0.3)
 
     # Reward-Entwicklung (letzte X Episoden)
-    display_episodes = min(1000, EPISODES // 2)  # Dynamisch basierend auf EPISODES
+    display_episodes = min(1000, EPISODES // 2)
     ax3.plot(rewards_per_episode[-display_episodes:], alpha=0.6, color='blue')
     ax3.set_title(f"Reward-Entwicklung (letzte {display_episodes} Episoden)")
     ax3.set_xlabel("Episode")
@@ -177,18 +190,25 @@ def create_training_statistics(rewards_per_episode, success_per_episode, env_mod
 
     plt.suptitle(f"Trainingsstatistiken ({env_mode}-Modus)", fontsize=16)
     plt.tight_layout()
+
+    # PDF Export
+    if EXPORT_PDF:
+        plt.savefig(f"{EXPORT_PATH}/train_statistics.pdf", format='pdf', bbox_inches='tight')
+        print(f"Training Statistics gespeichert: {EXPORT_PATH}/train_statistics.pdf")
+
     plt.show()
 
 
 # ============================================================================
-# HAUPTFUNKTION
+# Hauptfunktion
 # ============================================================================
 
-# Training des Q-Learning Agenten über mehrere Episoden
 def train_agent():
+    """Training des Q-Learning Agenten über mehrere Episoden"""
     # Initialisierung
     env, grid_size = initialize_environment()
     Q, n_states, n_actions = initialize_q_table(env)
+    setup_export()
 
     # Tracking-Listen
     rewards_per_episode = []
@@ -228,10 +248,6 @@ def train_agent():
             if check_success(reward, ENV_MODE):
                 success = True
 
-            # Debug für erste Episoden
-            if episode < 3:
-                print_debug_info(episode, state, action, reward, next_state, total_reward, success)
-
             if done:
                 break
 
@@ -261,8 +277,9 @@ def train_agent():
 
     return Q, rewards_per_episode, success_per_episode
 
-# Druck der Trainingsergebnisse
+
 def print_training_results(rewards_per_episode, success_per_episode, steps_per_episode):
+    """Trainingsergebnisse ausgeben"""
     total_successes = sum(success_per_episode)
     avg_reward = np.mean(rewards_per_episode)
     avg_steps = np.mean(steps_per_episode)
@@ -275,7 +292,7 @@ def print_training_results(rewards_per_episode, success_per_episode, steps_per_e
     print(f"  Erfolgreiche Episoden: {total_successes}/{EPISODES} ({(total_successes / EPISODES) * 100:.1f}%)")
 
     # Erfolgsrate in verschiedenen Phasen
-    phase_size = min(500, EPISODES // 4)  # Dynamische Phasengröße basierend auf EPISODES
+    phase_size = min(500, EPISODES // 4)
     if len(success_per_episode) >= phase_size * 2:
         early_success = np.mean(success_per_episode[:phase_size]) * 100
         late_success = np.mean(success_per_episode[-phase_size:]) * 100
@@ -299,8 +316,12 @@ def print_training_results(rewards_per_episode, success_per_episode, steps_per_e
     print(f"  Discount Factor (γ): {GAMMA}")
     print(f"  Epsilon (ε): {EPSILON}")
 
+    if EXPORT_PDF:
+        print(f"\nPDF-Exports gespeichert in: {EXPORT_PATH}")
+
+
 # ============================================================================
-# AUSFÜHRUNG
+# Ausführung
 # ============================================================================
 
 if __name__ == "__main__":
