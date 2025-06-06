@@ -29,7 +29,7 @@ Mit diesem Projekt navigiert ein Reinforcement-Learning-Agent ein Schiff durch e
 FOM-rl-shipnav-qlearning/
 ├── src/
 │   ├── train.py                     ← Q-Learning-Training mit Visualisierung & Erfolgsmetrik
-│   ├── evaluate_policy.py           ← Statistische Zielerreichung auf zufälligen Karten
+│   ├── evaluate_policy.py           ← Evaluierung der trainierten Q-Learning Policy
 │   ├── visualize_policy.py          ← Statische Darstellung der gelernten Policy mit Emojis & Exportfunktion
 │   ├── config.py                    ← Zentrale Steuerung des Szenarios über ENV_MODE
 │   ├── q_table.py                   ← Laden/Speichern von Q-Tabellen

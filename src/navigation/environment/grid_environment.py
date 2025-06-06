@@ -1,4 +1,4 @@
-# grid_environment.py
+# grid_environment.py - DEBUG VERSION
 
 import sys
 import os
@@ -15,6 +15,7 @@ import random
 # Lokale Module
 from src.config import REWARDS
 
+
 class GridEnvironment(gym.Env):
     metadata = {"render_modes": ["human"]}
 
@@ -24,6 +25,12 @@ class GridEnvironment(gym.Env):
         self.grid_size = 5
         self.observation_space = spaces.Discrete(self.grid_size * self.grid_size)
         self.action_space = spaces.Discrete(4)  # 0=oben, 1=rechts, 2=unten, 3=links
+
+        # Attribute für Schleifenerkennung und Timeout
+        self.visited_states = {}
+        self.max_steps = 50
+        self.current_steps = 0
+        self.loop_threshold = 6
 
         # Seed setzen, falls angegeben
         if seed is not None:
@@ -60,14 +67,19 @@ class GridEnvironment(gym.Env):
             all_positions.remove(self.goal_pos)
             self.obstacles = random.sample(all_positions, k=3)
 
-        # State initialisieren
+        # WICHTIG: Agent-Position korrekt initialisieren
+        self.agent_pos = self.start_pos
         self.state = self.pos_to_state(self.start_pos)
+
+        # DEBUG: Position beim Start ausgeben
+        print(f"DEBUG: Start={self.start_pos}, Goal={self.goal_pos}, Obstacles={self.obstacles}")
 
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
 
         all_positions = [(i, j) for i in range(self.grid_size) for j in range(self.grid_size)]
 
+        # Standardwerte zurücksetzen
         self.start_pos = (0, 0)
         self.goal_pos = (4, 4)
         self.obstacles = [(1, 1), (2, 3), (3, 1)]
@@ -75,6 +87,8 @@ class GridEnvironment(gym.Env):
         if self.mode == "random_start":
             possible_starts = [pos for pos in all_positions if pos != self.goal_pos and pos not in self.obstacles]
             self.start_pos = random.choice(possible_starts)
+            # DEBUG: Neuer Start
+            print(f"DEBUG: Neuer random_start={self.start_pos}")
 
         elif self.mode == "random_goal":
             possible_goals = [pos for pos in all_positions if pos != self.start_pos and pos not in self.obstacles]
@@ -84,38 +98,90 @@ class GridEnvironment(gym.Env):
             possible_obstacles = [pos for pos in all_positions if pos != self.start_pos and pos != self.goal_pos]
             self.obstacles = random.sample(possible_obstacles, k=3)
 
-        self.agent_position = self.start_pos
+        # WICHTIG: Agent-Position korrekt setzen
+        self.agent_pos = self.start_pos
         self.state = self.pos_to_state(self.start_pos)
+
+        # Tracking-Attribute für neue Episode zurücksetzen
+        self.visited_states = {}
+        self.current_steps = 0
+
+        # DEBUG: Check ob Start == Goal
+        if self.agent_pos == self.goal_pos:
+            print(f"WARNING: Agent startet bereits am Ziel! Start={self.agent_pos}, Goal={self.goal_pos}")
+
         return self.state, {}
 
     def pos_to_state(self, pos):
         return pos[0] * self.grid_size + pos[1]
 
+    def state_to_pos(self, state):
+        """Hilfsfunktion: State zurück zu Position"""
+        return (state // self.grid_size, state % self.grid_size)
+
     def step(self, action):
-        row, col = divmod(self.state, self.grid_size)
+        # WICHTIG: Position aus State ableiten
+        current_pos = self.state_to_pos(self.state)
+        row, col = current_pos
+
+        # DEBUG: Aktuelle Position vor Bewegung
+        print(f"DEBUG: Vor Bewegung - Pos=({row},{col}), Action={action}")
 
         # Bewegung nach Aktion
+        new_row, new_col = row, col
         if action == 0 and row > 0:  # oben
-            row -= 1
+            new_row = row - 1
         elif action == 1 and col < self.grid_size - 1:  # rechts
-            col += 1
+            new_col = col + 1
         elif action == 2 and row < self.grid_size - 1:  # unten
-            row += 1
+            new_row = row + 1
         elif action == 3 and col > 0:  # links
-            col -= 1
+            new_col = col - 1
 
-        next_pos = (row, col)
+        next_pos = (new_row, new_col)
         next_state = self.pos_to_state(next_pos)
         self.state = next_state
+        self.agent_pos = next_pos  # Agent-Position aktualisieren
 
-        reward = REWARDS["step"]  # Bewegungskosten
+        # Schrittzähler erhöhen
+        self.current_steps += 1
+
+        # IMMER erst Schrittstrafe
+        reward = REWARDS["step"]  # -1
         terminated = False
 
-        if next_pos == self.goal_pos:
-            reward = REWARDS["goal"]
-            terminated = True
-        elif next_pos in self.obstacles:
-            reward = REWARDS["obstacle"]
-            terminated = True
+        # DEBUG: Nach Bewegung
+        print(f"DEBUG: Nach Bewegung - Neue Pos={next_pos}, Reward bisher={reward}")
 
+        # Schleifenerkennung - Zustand-Besuchszähler aktualisieren
+        if next_state in self.visited_states:
+            self.visited_states[next_state] += 1
+        else:
+            self.visited_states[next_state] = 1
+
+        # Schleifenabbruch-Check
+        if self.visited_states[next_state] >= self.loop_threshold:
+            reward += REWARDS["loop_abort"]  # Zusätzliche Strafe
+            terminated = True
+            print(f"DEBUG: Schleifenabbruch! Pos={next_pos} besucht {self.visited_states[next_state]}x")
+
+        # Timeout-Check
+        elif self.current_steps >= self.max_steps:
+            reward += REWARDS["timeout"]  # Zusätzliche Strafe
+            terminated = True
+            print(f"DEBUG: Timeout nach {self.current_steps} Schritten!")
+
+        # Ziel-Check (höchste Priorität)
+        elif next_pos == self.goal_pos:
+            reward = REWARDS["goal"]  # Überschreibt Schrittstrafe
+            terminated = True
+            print(f"DEBUG: ZIEL ERREICHT! Pos={next_pos}, Goal={self.goal_pos}, Final Reward={reward}")
+
+        # Hindernis-Check
+        elif next_pos in self.obstacles:
+            reward += REWARDS["obstacle"]  # Zusätzliche Strafe
+            terminated = True
+            print(f"DEBUG: Hindernis getroffen! Pos={next_pos}, Obstacles={self.obstacles}")
+
+        print(f"DEBUG: Final - Reward={reward}, Terminated={terminated}, Steps={self.current_steps}")
         return next_state, reward, terminated, False, {}
