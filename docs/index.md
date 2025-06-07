@@ -1,15 +1,14 @@
-# Q-Learning Navigation für Schiffssteuerung
-
+# 🚢 Q-Learning für Schiffsnavigation
 Dieses Projekt implementiert einen Q-Learning-Algorithmus zur autonomen Navigation eines Agenten durch verschiedene Gitterumgebungen. Das System ermöglicht das Training und die Evaluation von Navigationsstrategien unter verschiedenen Umgebungsbedingungen.
 
-## Projektziele
+## 🎯 Projektziele
 
 - Entwicklung eines robusten Q-Learning-Agenten für Navigationsprobleme
 - Implementierung verschiedener Umgebungsszenarien mit unterschiedlichen Komplexitätsgraden
 - Bereitstellung von Evaluations- und Vergleichstools für wissenschaftliche Analyse
 - Dokumentation der Implementierung und Ergebnisse
 
-## Systemarchitektur
+## 🏗️ Systemarchitektur
 
 Das Projekt besteht aus mehreren Komponenten:
 
@@ -18,7 +17,7 @@ Das Projekt besteht aus mehreren Komponenten:
 - **Vergleich**: Statistische Auswertung verschiedener Szenarien
 - **Visualisierung**: Grafische Darstellung der Agentenverhalten und Lernfortschritte
 
-## Verfügbare Umgebungsszenarien
+## 🗺️ Verfügbare Umgebungsszenarien
 
 | Szenario | Beschreibung | Anwendungsbereich |
 |----------|--------------|-------------------|
@@ -28,7 +27,7 @@ Das Projekt besteht aus mehreren Komponenten:
 | **Random Obstacles** | Variable Hindernisverteilungen | Dynamische Umgebungen |
 | **Container** | Pickup/Dropoff-Aufgaben | Komplexe Aufgabenstellungen |
 
-## Technische Spezifikationen
+## ⚙️ Technische Spezifikationen
 
 - **Umgebung**: 5x5 Gitterwelt (OpenAI Gymnasium-kompatibel)
 - **Algorithmus**: Q-Learning mit Epsilon-Greedy-Exploration
@@ -36,7 +35,7 @@ Das Projekt besteht aus mehreren Komponenten:
 - **Aktionsraum**: 4 Bewegungsrichtungen (Oben, Rechts, Unten, Links)
 - **Terminierungsbedingungen**: Zielerreichung, Timeout, Schleifenerkennung, Hinderniskollision
 
-## Wissenschaftliche Evaluierung
+## 📊 Wissenschaftliche Evaluierung
 
 Das System bietet umfassende Analysemöglichkeiten:
 
@@ -48,7 +47,7 @@ Das System bietet umfassende Analysemöglichkeiten:
 
 ---
 
-**Weiterführende Informationen:**
+**📚 Weiterführende Informationen:**
 
 - [Setup und Installation](setup.md)
 - [Funktionsweise des Systems](funktionsweise.md)
