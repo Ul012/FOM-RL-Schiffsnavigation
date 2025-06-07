@@ -1,4 +1,4 @@
-# Willkommen
+[# Willkommen
 
 Mit diesem Projekt navigiert ein Reinforcement-Learning-Agent ein Schiff durch eine Gitterwelt.
 
@@ -58,4 +58,4 @@ Der Ablauf des Projekts gliedert sich in drei Hauptschritte:
    Mit `evaluate_policy.py` wird die gelernte Policy getestet – z. B. in 100 zufällig generierten Umgebungen. Es erfolgt kein Lernen mehr: Der Agent folgt der gespeicherten Q-Tabelle (`q_table.npy`) und wählt jeweils die beste bekannte Aktion. Ziel ist es, Erfolgsquote und durchschnittlichen Reward zu ermitteln. Es wird auch geprüft, ob sich der Agent in einer Endlosschleife befindet.
 
 3. **Visualisierung**  
-   `visualize_policy.py` zeigt einen einzelnen Lauf des Agenten in der Umgebung animiert mit Pygame. Diese Darstellung dient der qualitativen Demonstration des Lernverhaltens. Optional können ein GIF und ein PDF-Screenshot exportiert werden.
+   `visualize_policy.py` zeigt einen einzelnen Lauf des Agenten in der Umgebung animiert mit Pygame. Diese Darstellung dient der qualitativen Demonstration des Lernverhaltens. Optional können ein GIF und ein PDF-Screenshot exportiert werden.]()
