@@ -1,8 +1,8 @@
-# Q-Learning Navigation für Schiffssteuerung
+# 🚢 Q-Learning Navigation für Schiffssteuerung
 
 Dieses Projekt implementiert Q-Learning zur autonomen Navigation eines Schiffes durch eine 5x5-Gitterwelt. Das System umfasst verschiedene Umgebungsmodi, automatisiertes Multi-Szenario-Training und umfassende Evaluationstools.
 
-## Projektübersicht
+## 📋 Projektübersicht
 
 - **Q-Learning-Implementierung** mit automatisiertem Training
 - **Gymnasium-kompatible Umgebungen** für verschiedene Navigationsszenarien
@@ -12,7 +12,7 @@ Dieses Projekt implementiert Q-Learning zur autonomen Navigation eines Schiffes 
 - **Professionelle Visualisierung** und PDF-Export
 - **Umfassende Dokumentation** mit MkDocs
 
-## Installation
+## ⚙️ Installation
 
 ### Virtuelle Umgebung erstellen
 ```bash
@@ -26,7 +26,7 @@ source rl-venv/bin/activate       # macOS/Linux
 pip install -r requirements.txt
 ```
 
-## Verwendung
+## 🚀 Verwendung
 
 ### Einzelnes Szenario trainieren
 ```bash
@@ -54,7 +54,7 @@ python evaluate_policy.py
 python visualize_policy.py
 ```
 
-## Verfügbare Szenarien
+## 🗺️ Verfügbare Szenarien
 
 | Szenario | Beschreibung | Komplexität |
 |----------|--------------|-------------|
@@ -64,20 +64,20 @@ python visualize_policy.py
 | `random_obstacles` | Variable Hindernispositionen pro Episode | Hoch |
 | `container` | Pickup/Dropoff-Aufgabe mit erweiterten Zuständen | Sehr hoch |
 
-## Konfiguration
+## ⚙️ Konfiguration
 
 Alle Parameter werden zentral in `config.py` verwaltet:
 
 ```python
-ENV_MODE = "static"           # Szenario-Auswahl
-EPISODES = 2000              # Trainings-Episoden
-MAX_STEPS = 50               # Maximale Schritte pro Episode
-ALPHA = 0.1                  # Lernrate
-GAMMA = 0.9                  # Diskontierungsfaktor
-EPSILON = 0.1                # Explorationsrate
+ENV_MODE    # Szenario-Auswahl
+EPISODES    # Trainings-Episoden
+MAX_STEPS   # Maximale Schritte pro Episode
+ALPHA       # Lernrate
+GAMMA       # Diskontierungsfaktor
+EPSILON     # Explorationsrate
 ```
 
-## Projektstruktur
+## 📁 Projektstruktur
 
 ```
 ship-navigation-rl/
@@ -99,17 +99,17 @@ ship-navigation-rl/
 └── README.md
 ```
 
-## Wissenschaftliche Evaluierung
+## 📊 Wissenschaftliche Evaluierung
 
-Das Projekt bietet umfassende Analysemöglichkeiten:
+Analysemöglichkeiten:
 
 - **Erfolgsraten-Vergleich** zwischen Szenarien
 - **Terminierungsarten-Analyse** (Erfolg, Timeout, Schleifen, Hindernisse)
 - **Lernkurven-Visualisierung** mit statistischen Metriken
 - **Parameter-Logging** für Reproduzierbarkeit
-- **Professionelle Diagramme** mit PDF-Export
+- **Diagramme** mit PDF-Export
 
-## Dokumentation
+## 📚 Dokumentation
 
 Lokale Dokumentation starten:
 ```bash
@@ -118,7 +118,7 @@ mkdocs serve
 
 Verfügbar unter: http://127.0.0.1:8000
 
-## Technische Details
+## 🔧 Technische Details
 
 - **Framework**: OpenAI Gymnasium
 - **Algorithmus**: Q-Learning mit Epsilon-Greedy-Exploration

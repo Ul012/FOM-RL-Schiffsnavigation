@@ -1,61 +1,56 @@
-[# Willkommen
+# Q-Learning Navigation für Schiffssteuerung
 
-Mit diesem Projekt navigiert ein Reinforcement-Learning-Agent ein Schiff durch eine Gitterwelt.
+Dieses Projekt implementiert einen Q-Learning-Algorithmus zur autonomen Navigation eines Agenten durch verschiedene Gitterumgebungen. Das System ermöglicht das Training und die Evaluation von Navigationsstrategien unter verschiedenen Umgebungsbedingungen.
 
-## Ziele
-- Entwicklung eines Q-Learning-Agents
-- Erstellung einer eigenen OpenAI-Gymnasium-Umgebung
-- Dokumentation des Projektverlaufs mit MkDocs
+## Projektziele
 
-👉 Siehe [Setup & Ausführung](setup.md)
+- Entwicklung eines robusten Q-Learning-Agenten für Navigationsprobleme
+- Implementierung verschiedener Umgebungsszenarien mit unterschiedlichen Komplexitätsgraden
+- Bereitstellung von Evaluations- und Vergleichstools für wissenschaftliche Analyse
+- Dokumentation der Implementierung und Ergebnisse
+
+## Systemarchitektur
+
+Das Projekt besteht aus mehreren Komponenten:
+
+- **Training**: Automatisiertes Lernen für einzelne oder multiple Szenarien
+- **Evaluation**: Quantitative Analyse der gelernten Policies
+- **Vergleich**: Statistische Auswertung verschiedener Szenarien
+- **Visualisierung**: Grafische Darstellung der Agentenverhalten und Lernfortschritte
+
+## Verfügbare Umgebungsszenarien
+
+| Szenario | Beschreibung | Anwendungsbereich |
+|----------|--------------|-------------------|
+| **Static** | Konstante Positionen für alle Elemente | Grundlegendes Q-Learning |
+| **Random Start** | Variable Startpositionen | Robustheitstesting |
+| **Random Goal** | Variable Zielpositionen | Adaptive Navigation |
+| **Random Obstacles** | Variable Hindernisverteilungen | Dynamische Umgebungen |
+| **Container** | Pickup/Dropoff-Aufgaben | Komplexe Aufgabenstellungen |
+
+## Technische Spezifikationen
+
+- **Umgebung**: 5x5 Gitterwelt (OpenAI Gymnasium-kompatibel)
+- **Algorithmus**: Q-Learning mit Epsilon-Greedy-Exploration
+- **Zustandsraum**: Diskret (25 Zustände für Grid, erweitert für Container)
+- **Aktionsraum**: 4 Bewegungsrichtungen (Oben, Rechts, Unten, Links)
+- **Terminierungsbedingungen**: Zielerreichung, Timeout, Schleifenerkennung, Hinderniskollision
+
+## Wissenschaftliche Evaluierung
+
+Das System bietet umfassende Analysemöglichkeiten:
+
+- Erfolgsraten-Vergleich zwischen verschiedenen Szenarien
+- Statistische Auswertung von Terminierungsarten
+- Lernkurven-Analyse mit Moving-Average-Glättung
+- Parameter-Sensitivitätsanalyse
+- Reproduzierbare Experimente durch zentrale Konfiguration
 
 ---
 
-## 🔀 Modus-Übersicht
+**Weiterführende Informationen:**
 
-| Modus         | Beschreibung                                                                 |
-|---------------|------------------------------------------------------------------------------|
-| `static`      | Fester Start-, Ziel- und Hindernisbereich. Gut zum Einstieg, stabile Lernkurve. |
-| `random_start`| Zufälliger Startpunkt bei festem Ziel. Testet Robustheit beim Startverhalten. |
-| `random_goal` | Fester Startpunkt, aber zufälliges Ziel. Erfordert flexible Zielnavigation.   |
-| `random_obstacles` | Hindernisse variieren pro Episode. Erhöht Unsicherheit, erschwert Lernen. |
-| `container`   | Zwei-Ziel-Aufgabe: Container muss zuerst abgeholt, dann zum Ziel gebracht werden. |
-
----
-
-## 📁 Projektstruktur
-
-```text
-FOM-rl-shipnav-qlearning/
-├── src/
-│   ├── train.py                     ← Q-Learning-Training mit Visualisierung & Erfolgsmetrik
-│   ├── evaluate_policy.py           ← Evaluierung der trainierten Q-Learning Policy
-│   ├── visualize_policy.py          ← Statische Darstellung der gelernten Policy mit Emojis & Exportfunktion
-│   ├── config.py                    ← Zentrale Steuerung des Szenarios über ENV_MODE
-│   ├── q_table.py                   ← Laden/Speichern von Q-Tabellen
-│   └── navigation/
-│       └── environment/
-│           ├── grid_environment.py      ← Basisumgebung
-│           └── container_environment.py ← Container-Szenario mit Pickup/Dropoff
-├── requirements.txt                 ← Projektabhängigkeiten
-├── mkdocs.yml                       ← MkDocs-Konfiguration
-├── docs/
-│   ├── index.md                     ← Startseite
-│   ├── setup.md                     ← Setup-Anleitung für Umgebung, Training und Visualisierung
-└── site/                            ← (von mkdocs build erzeugt)
-```
-
----
-
-## Ablauf des Projekts
-
-Der Ablauf des Projekts gliedert sich in drei Hauptschritte:
-
-1. **Training**  
-   Das Skript `train.py` erstellt eine Q-Tabelle durch Interaktion des Agenten mit der Umgebung. Dabei wird der Lernfortschritt über Rewards und Zielerreichung pro Episode dokumentiert. Über die Variable `ENV_MODE` in `config.py` kann zwischen verschiedenen Szenarien wie `static`, `random_start`, `random_goal` oder `container` gewählt werden.
-
-2. **Evaluation**  
-   Mit `evaluate_policy.py` wird die gelernte Policy getestet – z. B. in 100 zufällig generierten Umgebungen. Es erfolgt kein Lernen mehr: Der Agent folgt der gespeicherten Q-Tabelle (`q_table.npy`) und wählt jeweils die beste bekannte Aktion. Ziel ist es, Erfolgsquote und durchschnittlichen Reward zu ermitteln. Es wird auch geprüft, ob sich der Agent in einer Endlosschleife befindet.
-
-3. **Visualisierung**  
-   `visualize_policy.py` zeigt einen einzelnen Lauf des Agenten in der Umgebung animiert mit Pygame. Diese Darstellung dient der qualitativen Demonstration des Lernverhaltens. Optional können ein GIF und ein PDF-Screenshot exportiert werden.]()
+- [Setup und Installation](setup.md)
+- [Funktionsweise des Systems](funktionsweise.md)
+- [Training und Konfiguration](training.md)
+- [Visualisierung und Export](visualisierung.md)

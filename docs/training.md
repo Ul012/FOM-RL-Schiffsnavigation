@@ -1,15 +1,66 @@
-# Training des Agenten
+# Training und Konfiguration
 
-Das Training erfolgt über `train.py`. In jeder Episode wird eine neue Umgebung generiert (abhängig vom Modus), und der Agent lernt durch Interaktion.
+## Einzelszenario-Training
 
-## Ablauf einer Episode
+```bash
+cd src
+python train.py
+```
 
-1. Umgebung wird initialisiert
-2. Agent bewegt sich bis zum Ziel oder Timeout
-3. Q-Werte werden basierend auf Reward aktualisiert
+Das Training verwendet die Parameter aus `config.py` und erstellt:
+- Trainierte Q-Tabelle (`q_table_[szenario].npy`)  
+- Lernkurven-Diagramme
+- Erfolgsstatistiken
 
-## Hyperparameter
+## Multi-Szenario-Training
 
-- Lernrate (`alpha`)
-- Diskontfaktor (`gamma`)
-- Explorationsrate (`epsilon`) mit optionalem Decay
+```bash
+python train_all_scenarios.py
+```
+
+Trainiert automatisch alle Szenarien mit konfigurierbaren Optionen:
+- **Visualisierungsmodus**: Interaktiv oder automatisiert
+- **Szenario-Auswahl**: Einzeln oder alle
+- **Training-Modus**: Sequenziell oder parallel
+
+## Zentrale Parameter
+
+```python
+# config.py - Wichtigste Einstellungen
+ENV_MODE                     # Szenario-Auswahl
+EPISODES                     # Trainings-Episoden
+MAX_STEPS                    # Schritte pro Episode
+ALPHA                        # Lernrate
+GAMMA                        # Diskontfaktor
+EPSILON                      # Explorationsrate
+```
+
+## Parameter-Kategorien
+
+### Für schnelles Testing
+- Weniger Episoden
+- Kürzere Episoden
+- Höhere Explorationsrate
+
+### Für robuste Ergebnisse
+- Mehr Episoden
+- Längere Episoden
+- Ausgewogene Exploration
+
+### Für Timeout-Analyse
+- Sehr kurze Episoden (`MAX_STEPS`)
+- Niedrige Schleifenschwelle (`LOOP_THRESHOLD`)
+
+## Szenario-spezifische Besonderheiten
+
+- **Static**: Schnelle Konvergenz, hohe Erfolgsrate
+- **Random-Modi**: Langsamere Konvergenz, moderate Erfolgsrate
+- **Container**: Komplexer Zustandsraum, längere Trainingszeit
+
+## Trainingsüberwachung
+
+Das System zeigt automatisch:
+- Episode-Fortschritt mit Erfolgsrate
+- Lernkurven (Raw + Moving Average)
+- Terminierungsarten-Verteilung
+- Finale Statistiken
