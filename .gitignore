@@ -25,6 +25,12 @@ site/
 src/exports/
 src/evaluation_output/
 
+# Q-Learning Trainings-Outputs
+*.npy
+q_table*.npy
+training_log_*.json
+training_summary_*.json
+
 # Sonstiges
 .DS_Store
 .env

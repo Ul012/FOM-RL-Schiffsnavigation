@@ -17,7 +17,7 @@ import numpy as np
 import random
 
 # Lokale Module
-from src.config import REWARDS
+from config import REWARDS
 
 
 # ============================================================================
@@ -86,10 +86,9 @@ class GridEnvironment(gym.Env):
 
         print(f"Umgebung initialisiert: Start={self.start_pos}, Ziel={self.goal_pos}, Hindernisse={self.obstacles}")
 
-
-# ============================================================================
-# Hilfsfunktionen
-# ============================================================================
+    # ============================================================================
+    # Hilfsfunktionen
+    # ============================================================================
 
     def pos_to_state(self, pos):
         """Position zu State-Index konvertieren"""
@@ -117,11 +116,15 @@ class GridEnvironment(gym.Env):
 
     def calculate_reward(self, next_pos, terminated_reason=None):
         """Reward basierend auf Position und Zustand berechnen"""
-        reward = REWARDS["step"]  # Grundstrafe für jeden Schritt
-
+        # Ziel erreicht - überschreibt alle anderen Rewards
         if terminated_reason == "goal":
-            reward = REWARDS["goal"]  # Überschreibt Schrittstrafe
-        elif terminated_reason == "obstacle":
+            return REWARDS["goal"]
+
+        # Basis-Schrittstrafe für alle anderen Fälle
+        reward = REWARDS["step"]
+
+        # Zusätzliche Strafen je nach Terminierungsgrund
+        if terminated_reason == "obstacle":
             reward += REWARDS["obstacle"]  # Zusätzliche Strafe
         elif terminated_reason == "loop":
             reward += REWARDS["loop_abort"]  # Zusätzliche Strafe
@@ -135,25 +138,25 @@ class GridEnvironment(gym.Env):
         terminated = False
         reason = None
 
-        # Ziel erreicht (höchste Priorität)
+        # 1. Ziel erreicht (höchste Priorität)
         if next_pos == self.goal_pos:
             terminated = True
             reason = "goal"
             print(f"DEBUG: ZIEL ERREICHT! Pos={next_pos}, Ziel={self.goal_pos}")
 
-        # Hindernis getroffen
+        # 2. Hindernis getroffen (nur wenn nicht am Ziel)
         elif next_pos in self.obstacles:
             terminated = True
             reason = "obstacle"
-            print(f"DEBUG: Hindernis getroffen! Pos={next_pos}")
+            print(f"DEBUG: Hindernis getroffen! Pos={next_pos}, Hindernisse={self.obstacles}")
 
-        # Schleifenerkennung
+        # 3. Schleifenerkennung (nur wenn weder Ziel noch Hindernis)
         elif self.visited_states.get(next_state, 0) >= self.loop_threshold:
             terminated = True
             reason = "loop"
             print(f"DEBUG: Schleifenabbruch! Pos={next_pos} besucht {self.visited_states[next_state]}x")
 
-        # Timeout
+        # 4. Timeout (nur wenn keine andere Terminierung)
         elif self.current_steps >= self.max_steps:
             terminated = True
             reason = "timeout"
@@ -161,10 +164,9 @@ class GridEnvironment(gym.Env):
 
         return terminated, reason
 
-
-# ============================================================================
-# Hauptfunktionen
-# ============================================================================
+    # ============================================================================
+    # Hauptfunktionen
+    # ============================================================================
 
     def reset(self, seed=None, options=None):
         """Umgebung zurücksetzen"""
@@ -197,20 +199,18 @@ class GridEnvironment(gym.Env):
         self.agent_pos = next_pos
         self.current_steps += 1
 
-        # Schleifenerkennung aktualisieren
+        print(f"DEBUG: Nach Bewegung - Neue Pos={next_pos}")
+
+        # Schleifenerkennung aktualisieren (IMMER)
         if next_state in self.visited_states:
             self.visited_states[next_state] += 1
         else:
             self.visited_states[next_state] = 1
 
-        print(f"DEBUG: Nach Bewegung - Neue Pos={next_pos}")
-
-        # Terminierung prüfen
+        # Terminierung und Reward in korrekter Prioritätsreihenfolge prüfen
         terminated, reason = self.check_termination(next_pos, next_state)
-
-        # Reward berechnen
         reward = self.calculate_reward(next_pos, reason)
 
-        print(f"DEBUG: Final - Reward={reward}, Terminiert={terminated}, Schritte={self.current_steps}")
+        print(f"DEBUG: Final - Reward={reward}, Terminiert={terminated}, Grund={reason}, Schritte={self.current_steps}")
 
         return next_state, reward, terminated, False, {}

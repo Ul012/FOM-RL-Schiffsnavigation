@@ -268,18 +268,39 @@ def create_comparison_table(all_metrics):
             "Ø Schritte zum Ziel": f"{metrics['avg_steps_to_goal']:.1f}" if metrics['avg_steps_to_goal'] else "N/A",
             "Ø Reward": f"{metrics['avg_reward']:.2f}",
             "Reward Std": f"{metrics['reward_std']:.2f}",
-            "Timeout Rate (%)": f"{metrics['timeout_rate'] * 100:.1f}",
-            "Loop Abort Rate (%)": f"{metrics['loop_abort_rate'] * 100:.1f}",
-            "Obstacle Rate (%)": f"{metrics['obstacle_rate'] * 100:.1f}"
+            "Timeout (%)": f"{metrics['timeout_rate'] * 100:.1f}",
+            "Schleifenabbruch (%)": f"{metrics['loop_abort_rate'] * 100:.1f}",
+            "Hindernis-Kollision (%)": f"{metrics['obstacle_rate'] * 100:.1f}"
         }
         df_data.append(row)
 
     df = pd.DataFrame(df_data)
-    print("\n" + "=" * 100)
+    print("\n" + "=" * 120)
     print("SZENARIEN-VERGLEICH")
-    print("=" * 100)
+    print("=" * 120)
     print(df.to_string(index=False))
-    print("=" * 100)
+
+    # Zusätzliche Detailanalyse
+    print("\n" + "=" * 120)
+    print("FAILURE-MODI VERTEILUNG")
+    print("=" * 120)
+    print("Szenario".ljust(20) + "Erfolg".ljust(10) + "Timeout".ljust(12) + "Schleifen".ljust(12) + "Hindernisse".ljust(
+        12) + "Gesamt")
+    print("-" * 120)
+
+    for scenario_name, metrics in all_metrics.items():
+        if metrics is None:
+            continue
+
+        success = metrics['success_rate'] * 100
+        timeout = metrics['timeout_rate'] * 100
+        loop = metrics['loop_abort_rate'] * 100
+        obstacle = metrics['obstacle_rate'] * 100
+        total = success + timeout + loop + obstacle
+
+        print(f"{scenario_name:<20}{success:>6.1f}%{timeout:>10.1f}%{loop:>10.1f}%{obstacle:>10.1f}%{total:>10.1f}%")
+
+    print("=" * 120)
 
     return df
 
@@ -390,11 +411,12 @@ def create_radar_chart(all_metrics):
 
 
 def create_failure_modes_comparison(all_metrics):
-    """Vergleich der Failure-Modi"""
+    """Vergleich der Failure-Modi als Stacked Bar Chart"""
     scenarios = []
     timeout_rates = []
     loop_rates = []
     obstacle_rates = []
+    success_rates = []
 
     for scenario_name, metrics in all_metrics.items():
         if metrics is None:
@@ -403,36 +425,52 @@ def create_failure_modes_comparison(all_metrics):
         timeout_rates.append(metrics["timeout_rate"] * 100)
         loop_rates.append(metrics["loop_abort_rate"] * 100)
         obstacle_rates.append(metrics["obstacle_rate"] * 100)
+        success_rates.append(metrics["success_rate"] * 100)
 
-    x = np.arange(len(scenarios))
-    width = 0.25
+    fig, ax = plt.subplots(figsize=(12, 8))
 
-    fig, ax = plt.subplots(figsize=(12, 6))
+    # Stacked Bar Chart
+    bottom_success = np.zeros(len(scenarios))
+    bottom_timeout = success_rates
+    bottom_loop = np.array(success_rates) + np.array(timeout_rates)
+    bottom_obstacle = np.array(success_rates) + np.array(timeout_rates) + np.array(loop_rates)
 
-    bars1 = ax.bar(x - width, timeout_rates, width, label='Timeout', color='red', alpha=0.7)
-    bars2 = ax.bar(x, loop_rates, width, label='Schleifenabbruch', color='orange', alpha=0.7)
-    bars3 = ax.bar(x + width, obstacle_rates, width, label='Hindernis-Kollision', color='brown', alpha=0.7)
+    bars1 = ax.bar(scenarios, success_rates, label='Erfolg', color='green', alpha=0.8)
+    bars2 = ax.bar(scenarios, timeout_rates, bottom=bottom_timeout, label='Timeout', color='red', alpha=0.7)
+    bars3 = ax.bar(scenarios, loop_rates, bottom=bottom_loop, label='Schleifenabbruch', color='orange', alpha=0.7)
+    bars4 = ax.bar(scenarios, obstacle_rates, bottom=bottom_obstacle, label='Hindernis-Kollision', color='brown',
+                   alpha=0.7)
 
     ax.set_xlabel('Szenario')
-    ax.set_ylabel('Failure Rate (%)')
-    ax.set_title('Vergleich der Failure-Modi zwischen Szenarien', fontweight='bold')
-    ax.set_xticks(x)
-    ax.set_xticklabels(scenarios, rotation=45)
+    ax.set_ylabel('Anteil (%)')
+    ax.set_title('Verteilung der Episode-Ergebnisse (Stacked)', fontweight='bold', fontsize=14)
+    ax.set_ylim(0, 100)
     ax.legend()
     ax.grid(True, alpha=0.3, axis='y')
 
-    # Werte auf Balken anzeigen
-    def add_value_labels(bars):
-        for bar in bars:
-            height = bar.get_height()
-            if height > 0:
-                ax.text(bar.get_x() + bar.get_width() / 2., height + 0.5,
-                        f'{height:.1f}%', ha='center', va='bottom', fontsize=8)
+    # Prozentangaben auf Segmenten
+    for i, scenario in enumerate(scenarios):
+        # Erfolg
+        if success_rates[i] > 5:  # Nur bei größeren Segmenten
+            ax.text(i, success_rates[i] / 2, f'{success_rates[i]:.0f}%',
+                    ha='center', va='center', fontweight='bold', color='white')
 
-    add_value_labels(bars1)
-    add_value_labels(bars2)
-    add_value_labels(bars3)
+        # Timeout
+        if timeout_rates[i] > 5:
+            ax.text(i, bottom_timeout[i] + timeout_rates[i] / 2, f'{timeout_rates[i]:.0f}%',
+                    ha='center', va='center', fontweight='bold', color='white')
 
+        # Loop
+        if loop_rates[i] > 5:
+            ax.text(i, bottom_loop[i] + loop_rates[i] / 2, f'{loop_rates[i]:.0f}%',
+                    ha='center', va='center', fontweight='bold', color='white')
+
+        # Obstacle
+        if obstacle_rates[i] > 5:
+            ax.text(i, bottom_obstacle[i] + obstacle_rates[i] / 2, f'{obstacle_rates[i]:.0f}%',
+                    ha='center', va='center', fontweight='bold', color='white')
+
+    plt.xticks(rotation=45)
     plt.tight_layout()
 
     if EXPORT_PDF:
