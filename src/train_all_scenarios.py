@@ -9,6 +9,7 @@ import os
 import time
 from pathlib import Path
 import subprocess
+from datetime import datetime
 
 # Projektstruktur für Import anpassen
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '.')))
@@ -16,7 +17,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '.')))
 # Drittanbieter
 import numpy as np
 import matplotlib.pyplot as plt
-from datetime import datetime
 
 # Lokale Module - direkte Imports für Training
 from navigation.environment.grid_environment import GridEnvironment
@@ -68,8 +68,8 @@ TRAINING_CONFIG = {
 }
 
 # Visualisierung und Training-Modi
-SHOW_VISUALIZATIONS = True  # Werden interaktiv gesetzt
-PARALLEL_TRAINING = False  # True für parallel, False für nacheinander
+SHOW_VISUALIZATIONS = True
+PARALLEL_TRAINING = False
 
 
 # ============================================================================
@@ -80,9 +80,6 @@ def setup_training_environment():
     """Training-Umgebung vorbereiten"""
     # Export-Ordner erstellen
     Path(TRAINING_CONFIG["EXPORT_PATH"]).mkdir(exist_ok=True)
-
-    # Backup der ursprünglichen config.py erstellen
-    backup_config()
 
     # Matplotlib Backend konfigurieren
     if not SHOW_VISUALIZATIONS:
@@ -98,21 +95,6 @@ def setup_training_environment():
     print(f"  Loop Threshold: {TRAINING_CONFIG['LOOP_THRESHOLD']}")
     print(f"  Export-Pfad: {TRAINING_CONFIG['EXPORT_PATH']}")
     print(f"  Visualisierungen: {'Ja (interaktiv)' if SHOW_VISUALIZATIONS else 'Nein (nur PDF-Export)'}")
-
-
-def backup_config():
-    """config.py sichern"""
-    if os.path.exists("config.py"):
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        backup_path = f"config_backup_{timestamp}.py"
-
-        with open("config.py", "r", encoding="utf-8") as original:
-            content = original.read()
-
-        with open(backup_path, "w", encoding="utf-8") as backup:
-            backup.write(content)
-
-        print(f"Config-Backup erstellt: {backup_path}")
 
 
 def update_config_for_scenario(scenario_name, scenario_config):
@@ -177,6 +159,21 @@ import matplotlib
 
     with open("config.py", "w", encoding="utf-8") as f:
         f.write(config_content)
+
+
+def backup_config():
+    """config.py sichern"""
+    if os.path.exists("config.py"):
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_path = f"config_backup_{timestamp}.py"
+
+        with open("config.py", "r", encoding="utf-8") as original:
+            content = original.read()
+
+        with open(backup_path, "w", encoding="utf-8") as backup:
+            backup.write(content)
+
+        print(f"Config-Backup erstellt: {backup_path}")
 
 
 def run_training_for_scenario(scenario_name, scenario_config):
@@ -338,6 +335,7 @@ def train_all_scenarios():
 
     # Setup
     setup_training_environment()
+    backup_config()
 
     # Training ausführen
     if PARALLEL_TRAINING:
