@@ -4,7 +4,7 @@
 # Umgebungskonfiguration
 # ============================================================================
 
-ENV_MODE = "container"  # Optionen: static, random_start, random_goal, random_obstacles, container
+ENV_MODE = "random_goal"  # Optionen: static, random_start, random_goal, random_obstacles, container
 GRID_SIZE = 5
 ACTIONS = 4  # 0 = oben, 1 = rechts, 2 = unten, 3 = links
 
@@ -50,7 +50,12 @@ EVAL_MAX_STEPS = 100  # Max. Schritte pro Episode in Evaluation
 # Dateipfade
 # ============================================================================
 
-Q_TABLE_PATH = "q_table.npy"
+# Q-Tabelle Pfad basierend auf Modus
+def get_q_table_path(env_mode):
+    return f"q_table_{env_mode}.npy"
+
+Q_TABLE_PATH = get_q_table_path(ENV_MODE)
+
 RESULTS_PATH = "results/"
 PLOTS_PATH = "plots/"
 

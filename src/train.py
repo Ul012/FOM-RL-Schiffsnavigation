@@ -73,8 +73,9 @@ def check_success(reward, env_mode):
         return reward == REWARDS["goal"]
 
 
-def save_q_table(Q, filepath=Q_TABLE_PATH):
+def save_q_table(Q, env_mode=ENV_MODE):
     """Q-Tabelle speichern"""
+    filepath = f"q_table_{env_mode}.npy"
     np.save(filepath, Q)
     print(f"Q-Tabelle gespeichert: {filepath}")
 
@@ -268,7 +269,7 @@ def train_agent():
     print_training_results(rewards_per_episode, success_per_episode, steps_per_episode)
 
     # Q-Tabelle speichern
-    save_q_table(Q)
+    save_q_table(Q, ENV_MODE)
 
     # Visualisierungen erstellen
     create_learning_curve(rewards_per_episode, ENV_MODE)

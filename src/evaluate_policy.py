@@ -37,7 +37,8 @@ def initialize_environment():
 
 # Q-Tabelle laden
 
-def load_q_table(filepath=Q_TABLE_PATH):
+def load_q_table(env_mode=ENV_MODE):
+    filepath = f"q_table_{env_mode}.npy"
     try:
         Q = np.load(filepath)
         print(f"Q-Tabelle geladen: {filepath}")
@@ -161,7 +162,7 @@ def create_reward_histogram(rewards_all, env_mode):
 def evaluate_policy():
     # Initialisierung
     env, grid_size = initialize_environment()
-    Q = load_q_table()
+    Q = load_q_table(ENV_MODE)
     setup_export()
 
     if Q is None:
