@@ -22,7 +22,8 @@ __pycache__/
 site/
 
 # Exports und generierte Inhalte
-exports/
+src/exports/
+src/evaluation_output/
 
 # Sonstiges
 .DS_Store
