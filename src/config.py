@@ -35,8 +35,8 @@ EPISODES = 500  # Trainings-Episoden
 # Training Parameter
 # ============================================================================
 
-MAX_STEPS = 100  # Max. Schritte pro Episode (initial: 50)
-LOOP_THRESHOLD = 15  # Schleifenwiederholungen für Abbruch (initial: 6)
+MAX_STEPS = 50  # Max. Schritte pro Episode
+LOOP_THRESHOLD = 10  # Schleifenwiederholungen für Abbruch (initial: 6)
 
 # ============================================================================
 # Evaluation Parameter

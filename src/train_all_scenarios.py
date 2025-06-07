@@ -55,18 +55,6 @@ SCENARIOS = {
     }
 }
 
-# Training-Parameter (überschreiben config.py temporär)
-TRAINING_CONFIG = {
-    "EPISODES": 2000,
-    "MAX_STEPS": 100,
-    "ALPHA": 0.1,
-    "GAMMA": 0.95,
-    "EPSILON": 0.1,
-    "LOOP_THRESHOLD": 15,
-    "EXPORT_PDF": True,
-    "EXPORT_PATH": "exports"
-}
-
 # Visualisierung und Training-Modi
 SHOW_VISUALIZATIONS = True
 PARALLEL_TRAINING = False
@@ -76,10 +64,37 @@ PARALLEL_TRAINING = False
 # Hilfsfunktionen
 # ============================================================================
 
-def setup_training_environment():
+def load_current_config():
+    """Aktuelle config.py Parameter laden"""
+    # config.py als Modul importieren
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("config", "config.py")
+    config_module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(config_module)
+
+    # Parameter extrahieren
+    config_params = {
+        "EPISODES": config_module.EPISODES,
+        "MAX_STEPS": config_module.MAX_STEPS,
+        "ALPHA": config_module.ALPHA,
+        "GAMMA": config_module.GAMMA,
+        "EPSILON": config_module.EPSILON,
+        "LOOP_THRESHOLD": config_module.LOOP_THRESHOLD,
+        "EXPORT_PDF": config_module.EXPORT_PDF,
+        "EXPORT_PATH": config_module.EXPORT_PATH
+    }
+
+    print("✅ Parameter aus config.py geladen:")
+    for key, value in config_params.items():
+        print(f"  {key}: {value}")
+
+    return config_params
+
+
+def setup_training_environment(config_params):
     """Training-Umgebung vorbereiten"""
     # Export-Ordner erstellen
-    Path(TRAINING_CONFIG["EXPORT_PATH"]).mkdir(exist_ok=True)
+    Path(config_params["EXPORT_PATH"]).mkdir(exist_ok=True)
 
     # Matplotlib Backend konfigurieren
     if not SHOW_VISUALIZATIONS:
@@ -90,14 +105,14 @@ def setup_training_environment():
         print("📊 Matplotlib: Interactive Backend (Visualisierungen werden angezeigt)")
 
     print(f"Training-Setup abgeschlossen:")
-    print(f"  Episodes: {TRAINING_CONFIG['EPISODES']}")
-    print(f"  Max Steps: {TRAINING_CONFIG['MAX_STEPS']}")
-    print(f"  Loop Threshold: {TRAINING_CONFIG['LOOP_THRESHOLD']}")
-    print(f"  Export-Pfad: {TRAINING_CONFIG['EXPORT_PATH']}")
+    print(f"  Episodes: {config_params['EPISODES']}")
+    print(f"  Max Steps: {config_params['MAX_STEPS']}")
+    print(f"  Loop Threshold: {config_params['LOOP_THRESHOLD']}")
+    print(f"  Export-Pfad: {config_params['EXPORT_PATH']}")
     print(f"  Visualisierungen: {'Ja (interaktiv)' if SHOW_VISUALIZATIONS else 'Nein (nur PDF-Export)'}")
 
 
-def update_config_for_scenario(scenario_name, scenario_config):
+def update_config_for_scenario(scenario_name, scenario_config, config_params):
     """config.py für Szenario aktualisieren"""
     config_content = f'''# config.py - Auto-generiert für Szenario: {scenario_name}
 # Generiert von train_all_scenarios.py am {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
@@ -113,15 +128,15 @@ GRID_SIZE = 5
 # Training-Parameter
 # ============================================================================
 
-EPISODES = {TRAINING_CONFIG["EPISODES"]}
-MAX_STEPS = {TRAINING_CONFIG["MAX_STEPS"]}
-ALPHA = {TRAINING_CONFIG["ALPHA"]}
-GAMMA = {TRAINING_CONFIG["GAMMA"]}
-EPSILON = {TRAINING_CONFIG["EPSILON"]}
-LOOP_THRESHOLD = {TRAINING_CONFIG["LOOP_THRESHOLD"]}
+EPISODES = {config_params["EPISODES"]}
+MAX_STEPS = {config_params["MAX_STEPS"]}
+ALPHA = {config_params["ALPHA"]}
+GAMMA = {config_params["GAMMA"]}
+EPSILON = {config_params["EPSILON"]}
+LOOP_THRESHOLD = {config_params["LOOP_THRESHOLD"]}
 
 # ============================================================================
-# Aktionen und Rewards
+# Aktionen und Rewards (aus ursprünglicher config.py)
 # ============================================================================
 
 ACTIONS = {{
@@ -146,8 +161,8 @@ REWARDS = {{
 # ============================================================================
 
 Q_TABLE_PATH = "q_table_{scenario_config["env_mode"]}.npy"
-EXPORT_PDF = {str(TRAINING_CONFIG["EXPORT_PDF"]) if SHOW_VISUALIZATIONS else "False"}
-EXPORT_PATH = "{TRAINING_CONFIG["EXPORT_PATH"]}"
+EXPORT_PDF = {str(config_params["EXPORT_PDF"]) if SHOW_VISUALIZATIONS else "False"}
+EXPORT_PATH = "{config_params["EXPORT_PATH"]}"
 
 # ============================================================================
 # Matplotlib Backend (für automatisiertes Training)
@@ -176,7 +191,7 @@ def backup_config():
         print(f"Config-Backup erstellt: {backup_path}")
 
 
-def run_training_for_scenario(scenario_name, scenario_config):
+def run_training_for_scenario(scenario_name, scenario_config, config_params):
     """Training für einzelnes Szenario ausführen"""
     print(f"\n{'=' * 60}")
     print(f"STARTE TRAINING: {scenario_name.upper()}")
@@ -184,16 +199,28 @@ def run_training_for_scenario(scenario_name, scenario_config):
     print(f"Beschreibung: {scenario_config['description']}")
     print(f"Modus: {scenario_config['env_mode']}")
     print(f"Umgebung: {scenario_config['environment']}")
+    print(f"Episodes: {config_params['EPISODES']}")
 
     start_time = time.time()
 
     try:
-        # Config für dieses Szenario aktualisieren
-        update_config_for_scenario(scenario_name, scenario_config)
+        # Backup der ursprünglichen config.py
+        original_config = None
+        if os.path.exists("config.py"):
+            with open("config.py", "r", encoding="utf-8") as f:
+                original_config = f.read()
 
-        # Training starten (als subprocess um saubere Trennung zu gewährleisten)
+        # Config für dieses Szenario aktualisieren
+        update_config_for_scenario(scenario_name, scenario_config, config_params)
+
+        # Training starten
         result = subprocess.run([sys.executable, "train.py"],
                                 capture_output=True, text=True, timeout=1800)  # 30min timeout
+
+        # Ursprüngliche config.py wiederherstellen
+        if original_config:
+            with open("config.py", "w", encoding="utf-8") as f:
+                f.write(original_config)
 
         duration = time.time() - start_time
 
@@ -214,9 +241,17 @@ def run_training_for_scenario(scenario_name, scenario_config):
         return result.returncode == 0
 
     except subprocess.TimeoutExpired:
+        # Config wiederherstellen auch bei Timeout
+        if original_config:
+            with open("config.py", "w", encoding="utf-8") as f:
+                f.write(original_config)
         print(f"⏰ Training-Timeout nach 30min")
         return False
     except Exception as e:
+        # Config wiederherstellen auch bei Fehler
+        if original_config:
+            with open("config.py", "w", encoding="utf-8") as f:
+                f.write(original_config)
         print(f"❌ Unerwarteter Fehler: {e}")
         return False
 
@@ -252,7 +287,7 @@ run_training_for_scenario('{scenario_name}', scenario_config)
     return results
 
 
-def run_sequential_training():
+def run_sequential_training(config_params):
     """Alle Szenarien nacheinander trainieren"""
     print("🔄 SEQUENZIELLES TRAINING GESTARTET")
 
@@ -261,7 +296,7 @@ def run_sequential_training():
 
     for i, (scenario_name, scenario_config) in enumerate(SCENARIOS.items(), 1):
         print(f"\n[{i}/{len(SCENARIOS)}] Nächstes Szenario: {scenario_name}")
-        results[scenario_name] = run_training_for_scenario(scenario_name, scenario_config)
+        results[scenario_name] = run_training_for_scenario(scenario_name, scenario_config, config_params)
 
         # Kurze Pause zwischen Trainings
         time.sleep(2)
@@ -305,22 +340,8 @@ def create_training_summary(results):
 
 
 def restore_original_config():
-    """Ursprüngliche config.py wiederherstellen"""
-    # Suche nach neuestem Backup
-    backup_files = [f for f in os.listdir('.') if f.startswith('config_backup_') and f.endswith('.py')]
-
-    if backup_files:
-        latest_backup = max(backup_files)
-
-        with open(latest_backup, "r", encoding="utf-8") as backup:
-            content = backup.read()
-
-        with open("config.py", "w", encoding="utf-8") as config:
-            config.write(content)
-
-        print(f"Ursprüngliche config.py wiederhergestellt (aus {latest_backup})")
-    else:
-        print("⚠️ Kein Config-Backup gefunden - config.py manuell prüfen!")
+    """Diese Funktion ist nicht mehr nötig"""
+    pass  # Entfernt - config.py wird nach jedem Training direkt wiederhergestellt
 
 
 # ============================================================================
@@ -333,21 +354,20 @@ def train_all_scenarios():
     print(f"Anzahl Szenarien: {len(SCENARIOS)}")
     print(f"Training-Modus: {'Parallel' if PARALLEL_TRAINING else 'Sequenziell'}")
 
+    # Aktuelle config.py Parameter laden
+    config_params = load_current_config()
+
     # Setup
-    setup_training_environment()
-    backup_config()
+    setup_training_environment(config_params)
 
     # Training ausführen
     if PARALLEL_TRAINING:
         results = run_parallel_training()
     else:
-        results = run_sequential_training()
+        results = run_sequential_training(config_params)
 
     # Zusammenfassung
     create_training_summary(results)
-
-    # Config wiederherstellen
-    restore_original_config()
 
     return results
 
@@ -391,9 +411,8 @@ def configure_training_interactively():
     """Interaktive Training-Konfiguration"""
     global SHOW_VISUALIZATIONS
 
-    print(f"\nAktuelle Training-Parameter:")
-    for key, value in TRAINING_CONFIG.items():
-        print(f"  {key}: {value}")
+    # Aktuelle config.py Parameter laden und anzeigen
+    config_params = load_current_config()
 
     # Visualisierungs-Modus abfragen
     print(f"\n📊 VISUALISIERUNGS-MODUS:")
@@ -410,25 +429,8 @@ def configure_training_interactively():
         print("✅ Automatisierter Modus aktiviert")
         print("📄 Alle Diagramme werden nur als PDF gespeichert")
 
-    # Parameter-Anpassung
-    modify = input(f"\nTraining-Parameter ändern? (j/n): ").strip().lower()
-
-    if modify == 'j':
-        try:
-            episodes = input(f"Episodes ({TRAINING_CONFIG['EPISODES']}): ").strip()
-            if episodes:
-                TRAINING_CONFIG['EPISODES'] = int(episodes)
-
-            max_steps = input(f"Max Steps ({TRAINING_CONFIG['MAX_STEPS']}): ").strip()
-            if max_steps:
-                TRAINING_CONFIG['MAX_STEPS'] = int(max_steps)
-
-            loop_threshold = input(f"Loop Threshold ({TRAINING_CONFIG['LOOP_THRESHOLD']}): ").strip()
-            if loop_threshold:
-                TRAINING_CONFIG['LOOP_THRESHOLD'] = int(loop_threshold)
-
-        except ValueError:
-            print("Ungültige Eingabe - Standard-Parameter werden verwendet")
+    print(f"\n💡 Alle Training-Parameter kommen aus der config.py")
+    print(f"💡 Zum Ändern der Parameter bearbeiten Sie die config.py direkt")
 
 
 # ============================================================================
@@ -454,8 +456,8 @@ def main():
     print(f"\n📋 TRAINING KONFIGURATION:")
     print(f"  Szenarien: {list(SCENARIOS.keys())}")
     print(f"  Modus: {'Parallel' if PARALLEL_TRAINING else 'Sequenziell'}")
-    print(f"  Episodes pro Szenario: {TRAINING_CONFIG['EPISODES']}")
     print(f"  Visualisierungen: {'Interaktiv' if SHOW_VISUALIZATIONS else 'Automatisiert'}")
+    print(f"  Parameter werden aus config.py geladen")
 
     if SHOW_VISUALIZATIONS:
         print(f"  ⚠️  Sie müssen {len(SCENARIOS) * 3} Matplotlib-Fenster schließen!")
@@ -463,7 +465,9 @@ def main():
     else:
         print(f"  ✅ Läuft vollautomatisch durch")
 
-    estimated_time = len(SCENARIOS) * (TRAINING_CONFIG['EPISODES'] / 1000) * 2  # Grobe Schätzung
+    # Geschätzte Zeit basierend auf config.py
+    config_params = load_current_config()
+    estimated_time = len(SCENARIOS) * (config_params['EPISODES'] / 1000) * 2
     print(f"  ⏱️  Geschätzte Dauer: {estimated_time:.0f}-{estimated_time * 2:.0f} Minuten")
 
     confirm = input(f"\nTraining starten? (j/n): ").strip().lower()
