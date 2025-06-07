@@ -28,23 +28,23 @@ REWARDS = {
 
 ALPHA = 0.1  # Lernrate
 GAMMA = 0.9  # Diskontierungsfaktor
-EPSILON = 0.1  # Explorationsrate
+EPSILON = 0.3  # Explorationsrate (initial: 0.1)
 EPISODES = 500  # Trainings-Episoden
 
 # ============================================================================
 # Training Parameter
 # ============================================================================
 
-MAX_STEPS = 50  # Max. Schritte pro Episode
-LOOP_THRESHOLD = 10  # Schleifenwiederholungen für Abbruch (initial: 6)
+MAX_STEPS = 50  # Max. Schritte pro Episode (initial: 50)
+LOOP_THRESHOLD = 10 # Schleifenwiederholungen für Abbruch (initial: 6)
 
 # ============================================================================
 # Evaluation Parameter
 # ============================================================================
 
-NUM_TEST_ENVS = 100  # Anzahl Testumgebungen
-EVAL_EPISODES = 100  # Anzahl Episoden für Evaluation
-EVAL_MAX_STEPS = 100  # Max. Schritte pro Episode in Evaluation
+EVAL_EPISODES = 500  # Anzahl Episoden für Evaluation
+CONVERGENCE_THRESHOLD = 0.8  # 80% Erfolgsrate für Konvergenz-Bestimmung
+EVAL_MAX_STEPS = 50  # Max. Schritte pro Episode in Evaluation (initial: 100)
 
 # ============================================================================
 # Dateipfade
