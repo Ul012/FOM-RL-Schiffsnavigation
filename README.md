@@ -1,4 +1,4 @@
-# 🚢 Q-Learning Navigation für Schiffssteuerung
+# 🚢 Q-Learning für Schiffsnavigation
 
 Dieses Projekt implementiert Q-Learning zur autonomen Navigation eines Schiffes durch eine 5x5-Gitterwelt. Das System umfasst verschiedene Umgebungsmodi, automatisiertes Multi-Szenario-Training und umfassende Evaluationstools.
 
