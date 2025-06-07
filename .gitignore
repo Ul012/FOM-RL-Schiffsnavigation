@@ -1,3 +1,5 @@
+# .gitignore
+
 # Virtuelle Umgebung
 rl-venv/
 .venv/
@@ -18,6 +20,9 @@ __pycache__/
 
 # mkdocs Build-Verzeichnis
 site/
+
+# Exports und generierte Inhalte
+exports/
 
 # Sonstiges
 .DS_Store

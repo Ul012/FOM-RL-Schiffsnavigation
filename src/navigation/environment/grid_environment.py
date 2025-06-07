@@ -1,4 +1,8 @@
-# grid_environment.py - DEBUG VERSION
+# grid_environment.py
+
+# ============================================================================
+# Imports
+# ============================================================================
 
 import sys
 import os
@@ -16,7 +20,12 @@ import random
 from src.config import REWARDS
 
 
+# ============================================================================
+# GridEnvironment Klasse
+# ============================================================================
+
 class GridEnvironment(gym.Env):
+    """Grid-basierte Umgebung für Q-Learning"""
     metadata = {"render_modes": ["human"]}
 
     def __init__(self, mode="static", seed=None):
@@ -32,12 +41,16 @@ class GridEnvironment(gym.Env):
         self.current_steps = 0
         self.loop_threshold = 6
 
-        # Seed setzen, falls angegeben
+        # Seed setzen
         if seed is not None:
             random.seed(seed)
             np.random.seed(seed)
 
-        # Positionen vorbereiten
+        # Umgebung initialisieren
+        self._initialize_environment()
+
+    def _initialize_environment(self):
+        """Umgebung mit Positionen initialisieren"""
         all_positions = [(i, j) for i in range(self.grid_size) for j in range(self.grid_size)]
 
         # Standardwerte
@@ -46,89 +59,51 @@ class GridEnvironment(gym.Env):
         self.obstacles = [(1, 1), (2, 3), (3, 1)]
 
         # Modus-spezifische Anpassungen
-        if mode == "random_start":
+        if self.mode == "random_start":
             possible_starts = all_positions.copy()
             possible_starts.remove(self.goal_pos)
-            for h in self.obstacles:
-                if h in possible_starts:
-                    possible_starts.remove(h)
+            for obstacle in self.obstacles:
+                if obstacle in possible_starts:
+                    possible_starts.remove(obstacle)
             self.start_pos = random.choice(possible_starts)
 
-        elif mode == "random_goal":
+        elif self.mode == "random_goal":
             possible_goals = all_positions.copy()
             possible_goals.remove(self.start_pos)
-            for h in self.obstacles:
-                if h in possible_goals:
-                    possible_goals.remove(h)
+            for obstacle in self.obstacles:
+                if obstacle in possible_goals:
+                    possible_goals.remove(obstacle)
             self.goal_pos = random.choice(possible_goals)
 
-        elif mode == "random_obstacles":
+        elif self.mode == "random_obstacles":
             all_positions.remove(self.start_pos)
             all_positions.remove(self.goal_pos)
             self.obstacles = random.sample(all_positions, k=3)
 
-        # WICHTIG: Agent-Position korrekt initialisieren
+        # Agent-Position initialisieren
         self.agent_pos = self.start_pos
         self.state = self.pos_to_state(self.start_pos)
 
-        # DEBUG: Position beim Start ausgeben
-        print(f"DEBUG: Start={self.start_pos}, Goal={self.goal_pos}, Obstacles={self.obstacles}")
+        print(f"Umgebung initialisiert: Start={self.start_pos}, Ziel={self.goal_pos}, Hindernisse={self.obstacles}")
 
-    def reset(self, seed=None, options=None):
-        super().reset(seed=seed)
 
-        all_positions = [(i, j) for i in range(self.grid_size) for j in range(self.grid_size)]
-
-        # Standardwerte zurücksetzen
-        self.start_pos = (0, 0)
-        self.goal_pos = (4, 4)
-        self.obstacles = [(1, 1), (2, 3), (3, 1)]
-
-        if self.mode == "random_start":
-            possible_starts = [pos for pos in all_positions if pos != self.goal_pos and pos not in self.obstacles]
-            self.start_pos = random.choice(possible_starts)
-            # DEBUG: Neuer Start
-            print(f"DEBUG: Neuer random_start={self.start_pos}")
-
-        elif self.mode == "random_goal":
-            possible_goals = [pos for pos in all_positions if pos != self.start_pos and pos not in self.obstacles]
-            self.goal_pos = random.choice(possible_goals)
-
-        elif self.mode == "random_obstacles":
-            possible_obstacles = [pos for pos in all_positions if pos != self.start_pos and pos != self.goal_pos]
-            self.obstacles = random.sample(possible_obstacles, k=3)
-
-        # WICHTIG: Agent-Position korrekt setzen
-        self.agent_pos = self.start_pos
-        self.state = self.pos_to_state(self.start_pos)
-
-        # Tracking-Attribute für neue Episode zurücksetzen
-        self.visited_states = {}
-        self.current_steps = 0
-
-        # DEBUG: Check ob Start == Goal
-        if self.agent_pos == self.goal_pos:
-            print(f"WARNING: Agent startet bereits am Ziel! Start={self.agent_pos}, Goal={self.goal_pos}")
-
-        return self.state, {}
+# ============================================================================
+# Hilfsfunktionen
+# ============================================================================
 
     def pos_to_state(self, pos):
+        """Position zu State-Index konvertieren"""
         return pos[0] * self.grid_size + pos[1]
 
     def state_to_pos(self, state):
-        """Hilfsfunktion: State zurück zu Position"""
+        """State-Index zu Position konvertieren"""
         return (state // self.grid_size, state % self.grid_size)
 
-    def step(self, action):
-        # WICHTIG: Position aus State ableiten
-        current_pos = self.state_to_pos(self.state)
+    def get_next_position(self, current_pos, action):
+        """Neue Position nach Aktion berechnen"""
         row, col = current_pos
-
-        # DEBUG: Aktuelle Position vor Bewegung
-        print(f"DEBUG: Vor Bewegung - Pos=({row},{col}), Action={action}")
-
-        # Bewegung nach Aktion
         new_row, new_col = row, col
+
         if action == 0 and row > 0:  # oben
             new_row = row - 1
         elif action == 1 and col < self.grid_size - 1:  # rechts
@@ -138,50 +113,104 @@ class GridEnvironment(gym.Env):
         elif action == 3 and col > 0:  # links
             new_col = col - 1
 
-        next_pos = (new_row, new_col)
-        next_state = self.pos_to_state(next_pos)
-        self.state = next_state
-        self.agent_pos = next_pos  # Agent-Position aktualisieren
+        return (new_row, new_col)
 
-        # Schrittzähler erhöhen
+    def calculate_reward(self, next_pos, terminated_reason=None):
+        """Reward basierend auf Position und Zustand berechnen"""
+        reward = REWARDS["step"]  # Grundstrafe für jeden Schritt
+
+        if terminated_reason == "goal":
+            reward = REWARDS["goal"]  # Überschreibt Schrittstrafe
+        elif terminated_reason == "obstacle":
+            reward += REWARDS["obstacle"]  # Zusätzliche Strafe
+        elif terminated_reason == "loop":
+            reward += REWARDS["loop_abort"]  # Zusätzliche Strafe
+        elif terminated_reason == "timeout":
+            reward += REWARDS["timeout"]  # Zusätzliche Strafe
+
+        return reward
+
+    def check_termination(self, next_pos, next_state):
+        """Terminierungsbedingungen prüfen"""
+        terminated = False
+        reason = None
+
+        # Ziel erreicht (höchste Priorität)
+        if next_pos == self.goal_pos:
+            terminated = True
+            reason = "goal"
+            print(f"DEBUG: ZIEL ERREICHT! Pos={next_pos}, Ziel={self.goal_pos}")
+
+        # Hindernis getroffen
+        elif next_pos in self.obstacles:
+            terminated = True
+            reason = "obstacle"
+            print(f"DEBUG: Hindernis getroffen! Pos={next_pos}")
+
+        # Schleifenerkennung
+        elif self.visited_states.get(next_state, 0) >= self.loop_threshold:
+            terminated = True
+            reason = "loop"
+            print(f"DEBUG: Schleifenabbruch! Pos={next_pos} besucht {self.visited_states[next_state]}x")
+
+        # Timeout
+        elif self.current_steps >= self.max_steps:
+            terminated = True
+            reason = "timeout"
+            print(f"DEBUG: Timeout nach {self.current_steps} Schritten!")
+
+        return terminated, reason
+
+
+# ============================================================================
+# Hauptfunktionen
+# ============================================================================
+
+    def reset(self, seed=None, options=None):
+        """Umgebung zurücksetzen"""
+        super().reset(seed=seed)
+
+        # Umgebung neu initialisieren
+        self._initialize_environment()
+
+        # Tracking-Attribute zurücksetzen
+        self.visited_states = {}
+        self.current_steps = 0
+
+        # Warnung bei Start == Ziel
+        if self.agent_pos == self.goal_pos:
+            print(f"WARNING: Agent startet bereits am Ziel! Start={self.agent_pos}, Ziel={self.goal_pos}")
+
+        return self.state, {}
+
+    def step(self, action):
+        """Einen Schritt in der Umgebung ausführen"""
+        current_pos = self.state_to_pos(self.state)
+        print(f"DEBUG: Vor Bewegung - Pos={current_pos}, Aktion={action}")
+
+        # Neue Position berechnen
+        next_pos = self.get_next_position(current_pos, action)
+        next_state = self.pos_to_state(next_pos)
+
+        # Zustand aktualisieren
+        self.state = next_state
+        self.agent_pos = next_pos
         self.current_steps += 1
 
-        # IMMER erst Schrittstrafe
-        reward = REWARDS["step"]  # -1
-        terminated = False
-
-        # DEBUG: Nach Bewegung
-        print(f"DEBUG: Nach Bewegung - Neue Pos={next_pos}, Reward bisher={reward}")
-
-        # Schleifenerkennung - Zustand-Besuchszähler aktualisieren
+        # Schleifenerkennung aktualisieren
         if next_state in self.visited_states:
             self.visited_states[next_state] += 1
         else:
             self.visited_states[next_state] = 1
 
-        # Schleifenabbruch-Check
-        if self.visited_states[next_state] >= self.loop_threshold:
-            reward += REWARDS["loop_abort"]  # Zusätzliche Strafe
-            terminated = True
-            print(f"DEBUG: Schleifenabbruch! Pos={next_pos} besucht {self.visited_states[next_state]}x")
+        print(f"DEBUG: Nach Bewegung - Neue Pos={next_pos}")
 
-        # Timeout-Check
-        elif self.current_steps >= self.max_steps:
-            reward += REWARDS["timeout"]  # Zusätzliche Strafe
-            terminated = True
-            print(f"DEBUG: Timeout nach {self.current_steps} Schritten!")
+        # Terminierung prüfen
+        terminated, reason = self.check_termination(next_pos, next_state)
 
-        # Ziel-Check (höchste Priorität)
-        elif next_pos == self.goal_pos:
-            reward = REWARDS["goal"]  # Überschreibt Schrittstrafe
-            terminated = True
-            print(f"DEBUG: ZIEL ERREICHT! Pos={next_pos}, Goal={self.goal_pos}, Final Reward={reward}")
+        # Reward berechnen
+        reward = self.calculate_reward(next_pos, reason)
 
-        # Hindernis-Check
-        elif next_pos in self.obstacles:
-            reward += REWARDS["obstacle"]  # Zusätzliche Strafe
-            terminated = True
-            print(f"DEBUG: Hindernis getroffen! Pos={next_pos}, Obstacles={self.obstacles}")
+        print(f"DEBUG: Final - Reward={reward}, Terminiert={terminated}, Schritte={self.current_steps}")
 
-        print(f"DEBUG: Final - Reward={reward}, Terminated={terminated}, Steps={self.current_steps}")
         return next_state, reward, terminated, False, {}
