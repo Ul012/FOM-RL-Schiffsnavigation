@@ -4,7 +4,7 @@
 # Umgebungskonfiguration
 # ============================================================================
 
-ENV_MODE = "random_goal"  # Optionen: static, random_start, random_goal, random_obstacles, container
+ENV_MODE = "static"  # Optionen: static, random_start, random_goal, random_obstacles, container
 GRID_SIZE = 5
 ACTIONS = 4  # 0 = oben, 1 = rechts, 2 = unten, 3 = links
 SEED = 42 # Random seed für Reproduzierbarkeit
@@ -27,16 +27,19 @@ REWARDS = {
 # Q-Learning Parameter
 # ============================================================================
 
-ALPHA = 0.1  # Lernrate
-GAMMA = 0.9  # Diskontierungsfaktor
-EPSILON = 0.3  # Explorationsrate (initial: 0.1)
+ALPHA = 0.1 # Lernrate
+GAMMA = 0.95 # Diskontierungsfaktor
+EPSILON = 0.1 # Explorationsrate (initial: 0.1)
+# EPSILON_DECAY = START_EPSILON / (EPISODES / 2)
+# EPSILON_START = 1.0
+# EPSILON_FINAL = 0.1
 EPISODES = 500  # Trainings-Episoden
 
 # ============================================================================
 # Training Parameter
 # ============================================================================
 
-MAX_STEPS = 50  # Max. Schritte pro Episode (initial: 50)
+MAX_STEPS = 100  # Max. Schritte pro Episode
 LOOP_THRESHOLD = 10 # Schleifenwiederholungen für Abbruch (initial: 6)
 
 # ============================================================================
