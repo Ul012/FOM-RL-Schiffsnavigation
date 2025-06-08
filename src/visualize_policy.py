@@ -15,19 +15,32 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.
 import pygame
 import numpy as np
 import time
+import random
 
 # Lokale Module
 from config import (ENV_MODE, MAX_STEPS, GRID_SIZE, Q_TABLE_PATH,
-                    CELL_SIZE, FRAME_DELAY, EXPORT_PDF, EXPORT_PATH, REWARDS)
+                    CELL_SIZE, FRAME_DELAY, EXPORT_PDF, EXPORT_PATH, REWARDS, SEED)
 from navigation.environment.grid_environment import GridEnvironment
 from navigation.environment.container_environment import ContainerShipEnv
+
 
 # ============================================================================
 # Hilfsfunktionen
 # ============================================================================
 
+# Seed-Konfiguration für Reproduzierbarkeit
+def set_all_seeds(seed=None):
+    if seed is None:
+        seed = SEED
+
+    random.seed(seed)
+    np.random.seed(seed)
+    print(f"Seeds gesetzt auf: {seed}")
+    return seed
+
+
+# Laden der Q-Tabelle
 def load_q_table():
-    """Q-Tabelle laden"""
     try:
         Q = np.load(Q_TABLE_PATH)
         print(f"Q-Tabelle geladen: {Q.shape}")
@@ -38,36 +51,37 @@ def load_q_table():
         sys.exit(1)
 
 
+# Konvertierung von Observation zu State
 def obs_to_state(obs, env):
-    """Observation in State umwandeln"""
     if ENV_MODE == "container":
         return obs[0] * env.grid_size + obs[1] + (env.grid_size * env.grid_size) * obs[2]
     return obs
 
 
+# Extraktion der Position aus Observation
 def get_position(obs):
-    """Position aus Observation extrahieren"""
     if ENV_MODE == "container":
         return (obs[0], obs[1])
     return divmod(obs, GRID_SIZE)
 
 
+# Bestimmung der optimalen Aktion für einen Zustand
 def get_best_action(Q, state):
-    """Beste Aktion für Zustand"""
     return np.argmax(Q[state])
 
 
+# Erstellung des Export-Ordners
 def setup_export():
-    """Export-Ordner erstellen"""
     if EXPORT_PDF:
         Path(EXPORT_PATH).mkdir(exist_ok=True)
+
 
 # ============================================================================
 # Visualisierung
 # ============================================================================
 
+# Darstellung des Grids mit Agent und Policy
 def draw_grid(screen, font, env, agent_pos, Q):
-    """Grid mit Agent und Policy zeichnen"""
     colors = {
         'background': (224, 247, 255),
         'grid_line': (200, 200, 200),
@@ -120,19 +134,24 @@ def draw_grid(screen, font, env, agent_pos, Q):
 
     pygame.display.flip()
 
+
+# Speicherung des Screenshots
 def save_screenshot(screen):
-    """Screenshot als PDF speichern"""
     if EXPORT_PDF:
         screenshot_path = f"{EXPORT_PATH}/agent_final_position.png"
         pygame.image.save(screen, screenshot_path)
         print(f"Screenshot gespeichert: {screenshot_path}")
 
+
 # ============================================================================
 # Hauptfunktion
 # ============================================================================
 
+# Ausführung des Agenten mit gelernter Policy
 def run_agent():
-    """Agent mit gelernter Policy ausführen"""
+    # Seed für Reproduzierbarkeit setzen
+    set_all_seeds()
+
     print(f"Starte Visualisierung ({ENV_MODE}-Modus)...")
 
     # Initialisierung
@@ -203,6 +222,7 @@ def run_agent():
             running = False
 
     pygame.quit()
+
 
 # ============================================================================
 # Ausführung

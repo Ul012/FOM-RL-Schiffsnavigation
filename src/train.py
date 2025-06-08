@@ -15,11 +15,12 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.
 import numpy as np
 import matplotlib.pyplot as plt
 from collections import defaultdict
+import random
 
 # Lokale Module
 from config import (ENV_MODE, EPISODES, MAX_STEPS, ALPHA, GAMMA, EPSILON,
                     ACTIONS, REWARDS, GRID_SIZE, Q_TABLE_PATH,
-                    EXPORT_PDF, EXPORT_PATH)
+                    EXPORT_PDF, EXPORT_PATH, SEED)
 from navigation.environment.grid_environment import GridEnvironment
 from navigation.environment.container_environment import ContainerShipEnv
 
@@ -28,23 +29,34 @@ from navigation.environment.container_environment import ContainerShipEnv
 # Hilfsfunktionen
 # ============================================================================
 
+# Seed-Konfiguration für Reproduzierbarkeit
+def set_all_seeds(seed=None):
+    if seed is None:
+        seed = SEED
+
+    random.seed(seed)
+    np.random.seed(seed)
+    print(f"Seeds gesetzt auf: {seed}")
+    return seed
+
+
+# Initialisierung der Umgebung
 def initialize_environment():
-    """Umgebung initialisieren"""
     env = ContainerShipEnv() if ENV_MODE == "container" else GridEnvironment(mode=ENV_MODE)
     grid_size = env.grid_size
     print(f"Umgebung initialisiert: {ENV_MODE}-Modus, Grid-Größe: {grid_size}x{grid_size}")
     return env, grid_size
 
 
+# Zustandscodierung je nach Umgebungstyp
 def obs_to_state(obs, env_mode=ENV_MODE, grid_size=None):
-    """Zustandscodierung je nach Umgebung"""
     if env_mode == "container":
         return obs[0] * grid_size + obs[1] + (grid_size * grid_size) * obs[2]
     return obs
 
 
+# Initialisierung der Q-Tabelle
 def initialize_q_table(env):
-    """Q-Tabelle initialisieren"""
     n_states = env.observation_space.n if hasattr(env.observation_space, 'n') else np.prod(env.observation_space.nvec)
     n_actions = env.action_space.n
     Q = np.zeros((n_states, n_actions))
@@ -52,36 +64,36 @@ def initialize_q_table(env):
     return Q, n_states, n_actions
 
 
+# Epsilon-greedy Aktionsauswahl
 def select_action(Q, state, epsilon, n_actions):
-    """Epsilon-greedy Aktionsauswahl"""
     if np.random.rand() < epsilon:
         return np.random.choice(n_actions)
     else:
         return np.argmax(Q[state])
 
 
+# Q-Wert Update (Q-Learning)
 def update_q_value(Q, state, action, reward, next_state, alpha=ALPHA, gamma=GAMMA):
-    """Q-Wert Update (Q-Learning)"""
     Q[state, action] += alpha * (reward + gamma * np.max(Q[next_state]) - Q[state, action])
 
 
+# Erfolgserkennung je nach Umgebungstyp
 def check_success(reward, env_mode):
-    """Erfolgserkennung je nach Umgebung"""
     if env_mode == "container":
         return reward == REWARDS["dropoff"]
     else:  # Grid-Environment
         return reward == REWARDS["goal"]
 
 
+# Speicherung der Q-Tabelle
 def save_q_table(Q, env_mode=ENV_MODE):
-    """Q-Tabelle speichern"""
     filepath = f"q_table_{env_mode}.npy"
     np.save(filepath, Q)
     print(f"Q-Tabelle gespeichert: {filepath}")
 
 
+# Erstellung des Export-Ordners
 def setup_export():
-    """Export-Ordner erstellen"""
     if EXPORT_PDF:
         Path(EXPORT_PATH).mkdir(exist_ok=True)
 
@@ -90,8 +102,8 @@ def setup_export():
 # Visualisierungsfunktionen
 # ============================================================================
 
+# Erstellung der Lernkurve mit Moving Average
 def create_learning_curve(rewards_per_episode, env_mode, window_size=20):
-    """Lernkurve mit Moving Average"""
     plt.figure(figsize=(12, 6))
 
     # Raw Rewards
@@ -118,8 +130,8 @@ def create_learning_curve(rewards_per_episode, env_mode, window_size=20):
     plt.show()
 
 
+# Erstellung der Erfolgskurve
 def create_success_curve(success_per_episode, env_mode):
-    """Erfolgskurve"""
     plt.figure(figsize=(12, 4))
     plt.plot(success_per_episode, label="Ziel erreicht", color='green', alpha=0.7, linewidth=1)
 
@@ -145,8 +157,8 @@ def create_success_curve(success_per_episode, env_mode):
     plt.show()
 
 
+# Erstellung der Trainingsstatistiken
 def create_training_statistics(rewards_per_episode, success_per_episode, env_mode):
-    """Trainingsstatistiken"""
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(15, 10))
 
     # Reward-Histogramm
@@ -204,8 +216,11 @@ def create_training_statistics(rewards_per_episode, success_per_episode, env_mod
 # Hauptfunktion
 # ============================================================================
 
+# Training des Q-Learning Agenten über mehrere Episoden
 def train_agent():
-    """Training des Q-Learning Agenten über mehrere Episoden"""
+    # Seed für Reproduzierbarkeit setzen
+    set_all_seeds()
+
     # Initialisierung
     env, grid_size = initialize_environment()
     Q, n_states, n_actions = initialize_q_table(env)
@@ -217,7 +232,7 @@ def train_agent():
     steps_per_episode = []
 
     print(f"Starte Training mit {EPISODES} Episoden...")
-    print(f"Hyperparameter: α={ALPHA}, γ={GAMMA}, ε={EPSILON}")
+    print(f"Hyperparameter: α={ALPHA}, γ={GAMMA}, ε={EPSILON}, Seed={SEED}")
 
     # Training Loop
     for episode in range(EPISODES):
@@ -279,8 +294,8 @@ def train_agent():
     return Q, rewards_per_episode, success_per_episode
 
 
+# Ausgabe der Trainingsergebnisse
 def print_training_results(rewards_per_episode, success_per_episode, steps_per_episode):
-    """Trainingsergebnisse ausgeben"""
     total_successes = sum(success_per_episode)
     avg_reward = np.mean(rewards_per_episode)
     avg_steps = np.mean(steps_per_episode)
@@ -316,6 +331,7 @@ def print_training_results(rewards_per_episode, success_per_episode, steps_per_e
     print(f"  Lernrate (α): {ALPHA}")
     print(f"  Discount Factor (γ): {GAMMA}")
     print(f"  Epsilon (ε): {EPSILON}")
+    print(f"  Seed: {SEED}")
 
     if EXPORT_PDF:
         print(f"\nPDF-Exports gespeichert in: {EXPORT_PATH}")

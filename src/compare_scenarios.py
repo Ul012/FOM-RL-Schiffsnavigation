@@ -16,10 +16,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 from collections import defaultdict
+import random
 
-# Lokale Module - Parameter entsprechend config.py
+# Lokale Module
 from config import (EVAL_MAX_STEPS, LOOP_THRESHOLD, REWARDS, EXPORT_PDF, EXPORT_PATH,
-                    EVAL_EPISODES, CONVERGENCE_THRESHOLD)
+                    EVAL_EPISODES, CONVERGENCE_THRESHOLD, SEED)
 from navigation.environment.grid_environment import GridEnvironment
 from navigation.environment.container_environment import ContainerShipEnv
 
@@ -57,11 +58,22 @@ SCENARIOS = {
 
 
 # ============================================================================
-# Core-Funktionen
+# Hilfsfunktionen
 # ============================================================================
 
+# Seed-Konfiguration für Reproduzierbarkeit
+def set_all_seeds(seed=None):
+    if seed is None:
+        seed = SEED
+
+    random.seed(seed)
+    np.random.seed(seed)
+    print(f"Seeds gesetzt auf: {seed}")
+    return seed
+
+
+# Initialisierung der Umgebung für ein Szenario
 def initialize_environment(scenario_config):
-    """Umgebung für Szenario initialisieren"""
     if scenario_config["environment"] == "container":
         env = ContainerShipEnv()
     else:
@@ -69,8 +81,8 @@ def initialize_environment(scenario_config):
     return env, env.grid_size
 
 
+# Laden der Q-Tabelle
 def load_q_table(filepath):
-    """Q-Tabelle laden"""
     try:
         return np.load(filepath)
     except FileNotFoundError:
@@ -78,23 +90,23 @@ def load_q_table(filepath):
         return None
 
 
+# Zustandscodierung je nach Umgebungstyp
 def obs_to_state(obs, env_mode, grid_size):
-    """Zustandscodierung je nach Umgebung"""
     if env_mode == "container":
         return obs[0] * grid_size + obs[1] + (grid_size * grid_size) * obs[2]
     return obs
 
 
+# Erfolgsprüfung je nach Umgebungstyp
 def check_success(reward, env_mode):
-    """Erfolg prüfen je nach Umgebung"""
     if env_mode == "container":
         return reward == REWARDS["dropoff"]
     else:
         return reward == REWARDS["goal"]
 
 
+# Erstellung des Export-Ordners
 def setup_export():
-    """Export-Ordner erstellen"""
     if EXPORT_PDF:
         Path(EXPORT_PATH).mkdir(exist_ok=True)
 
@@ -103,8 +115,8 @@ def setup_export():
 # Evaluation
 # ============================================================================
 
+# Evaluation eines einzelnen Szenarios
 def evaluate_single_scenario(scenario_name, scenario_config):
-    """Einzelnes Szenario evaluieren - FINALE VERSION"""
     print(f"Evaluiere Szenario: {scenario_name}")
 
     env, grid_size = initialize_environment(scenario_config)
@@ -130,29 +142,24 @@ def evaluate_single_scenario(scenario_name, scenario_config):
         steps = 0
         visited_states = {}
 
-        # Episode durchführen
         terminated_by_environment = False
         while steps < EVAL_MAX_STEPS:
-            # Greedy Aktion (beste Q-Wert)
             action = np.argmax(Q[state])
             obs, reward, terminated, _, _ = env.step(action)
             next_state = obs_to_state(obs, scenario_config["env_mode"], grid_size)
             episode_reward += reward
             steps += 1
 
-            # 1. Erfolg prüfen
             if check_success(reward, scenario_config["env_mode"]):
                 results["success_count"] += 1
                 results["steps_to_goal"].append(steps)
                 break
 
-            # 2. Schleifenerkennung ZUERST (vor Environment-Terminierung)
             visited_states[next_state] = visited_states.get(next_state, 0) + 1
             if visited_states[next_state] >= LOOP_THRESHOLD:
                 results["loop_abort_count"] += 1
                 break
 
-            # 3. Environment-Terminierung (nur echte Hindernisse/Kollisionen)
             if terminated:
                 results["obstacle_count"] += 1
                 terminated_by_environment = True
@@ -160,7 +167,6 @@ def evaluate_single_scenario(scenario_name, scenario_config):
 
             state = next_state
         else:
-            # While-Schleife ohne break = Timeout
             if not terminated_by_environment:
                 results["timeout_count"] += 1
 
@@ -168,7 +174,6 @@ def evaluate_single_scenario(scenario_name, scenario_config):
         results["success_per_episode"].append(
             1 if results["success_count"] > len(results["success_per_episode"]) else 0)
 
-    # Debug-Output
     total = results["success_count"] + results["timeout_count"] + results["loop_abort_count"] + results[
         "obstacle_count"]
     print(f"  Erfolg: {results['success_count']}, Timeout: {results['timeout_count']}, "
@@ -177,8 +182,8 @@ def evaluate_single_scenario(scenario_name, scenario_config):
     return results
 
 
+# Berechnung der Leistungsmetriken
 def calculate_metrics(scenario_results):
-    """Metriken berechnen"""
     if scenario_results is None:
         return None
 
@@ -198,8 +203,8 @@ def calculate_metrics(scenario_results):
 # Visualisierung
 # ============================================================================
 
+# Erstellung der Vergleichstabelle
 def create_comparison_table(all_metrics):
-    """Vergleichstabelle erstellen"""
     data = []
     for scenario_name, metrics in all_metrics.items():
         if metrics is None:
@@ -223,8 +228,8 @@ def create_comparison_table(all_metrics):
     return df
 
 
+# Visualisierung des Erfolgsraten-Vergleichs
 def create_success_rate_comparison(all_metrics):
-    """Erfolgsraten-Vergleich"""
     scenarios = [name for name, metrics in all_metrics.items() if metrics is not None]
     success_rates = [metrics["success_rate"] * 100 for name, metrics in all_metrics.items() if metrics is not None]
 
@@ -249,8 +254,8 @@ def create_success_rate_comparison(all_metrics):
     plt.show()
 
 
+# Erstellung des gestapelten Balkendiagramms für Terminierungsarten
 def create_stacked_failure_chart(all_metrics):
-    """Stacked Bar Chart für Terminierungsarten"""
     scenarios = []
     success_rates = []
     timeout_rates = []
@@ -268,7 +273,6 @@ def create_stacked_failure_chart(all_metrics):
 
     fig, ax = plt.subplots(figsize=(12, 8))
 
-    # Stacked bars
     bottom_timeout = success_rates
     bottom_loop = [success_rates[i] + timeout_rates[i] for i in range(len(scenarios))]
     bottom_obstacle = [success_rates[i] + timeout_rates[i] + loop_rates[i] for i in range(len(scenarios))]
@@ -297,21 +301,22 @@ def create_stacked_failure_chart(all_metrics):
 # Hauptfunktion
 # ============================================================================
 
+# Vergleich aller Szenarien
 def compare_all_scenarios():
-    """Alle Szenarien vergleichen - FINALE VERSION"""
+    # Seed für Reproduzierbarkeit setzen
+    set_all_seeds()
+
     print("Starte Szenarien-Vergleich...")
     setup_export()
 
     all_results = {}
     all_metrics = {}
 
-    # Evaluierung
     for scenario_name, scenario_config in SCENARIOS.items():
         results = evaluate_single_scenario(scenario_name, scenario_config)
         all_results[scenario_name] = results
         all_metrics[scenario_name] = calculate_metrics(results)
 
-    # Ausgabe
     create_comparison_table(all_metrics)
     create_success_rate_comparison(all_metrics)
     create_stacked_failure_chart(all_metrics)

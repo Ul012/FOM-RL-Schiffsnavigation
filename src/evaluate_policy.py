@@ -15,10 +15,11 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '.')))
 import numpy as np
 import matplotlib.pyplot as plt
 from collections import defaultdict
+import random
 
 # Lokale Module
 from config import (ENV_MODE, EPISODES, MAX_STEPS, LOOP_THRESHOLD, REWARDS,
-                    Q_TABLE_PATH, EXPORT_PDF, EXPORT_PATH)
+                    Q_TABLE_PATH, EXPORT_PDF, EXPORT_PATH, SEED)
 from navigation.environment.grid_environment import GridEnvironment
 from navigation.environment.container_environment import ContainerShipEnv
 
@@ -27,16 +28,26 @@ from navigation.environment.container_environment import ContainerShipEnv
 # Hilfsfunktionen
 # ============================================================================
 
+# Seed-Konfiguration für Reproduzierbarkeit
+def set_all_seeds(seed=None):
+    if seed is None:
+        seed = SEED
+
+    random.seed(seed)
+    np.random.seed(seed)
+    print(f"Seeds gesetzt auf: {seed}")
+    return seed
+
+
+# Initialisierung der Umgebung
 def initialize_environment():
-    """Umgebung initialisieren"""
     env = ContainerShipEnv() if ENV_MODE == "container" else GridEnvironment(mode=ENV_MODE)
     grid_size = env.grid_size
     print(f"Umgebung initialisiert: {ENV_MODE}-Modus, Grid-Größe: {grid_size}x{grid_size}")
     return env, grid_size
 
 
-# Q-Tabelle laden
-
+# Laden der Q-Tabelle
 def load_q_table(env_mode=ENV_MODE):
     filepath = f"q_table_{env_mode}.npy"
     try:
@@ -48,16 +59,14 @@ def load_q_table(env_mode=ENV_MODE):
         return None
 
 
-# Zustandscodierung je nach Umgebung
-
+# Zustandscodierung je nach Umgebungstyp
 def obs_to_state(obs, env_mode=ENV_MODE, grid_size=None):
     if env_mode == "container":
         return obs[0] * grid_size + obs[1] + (grid_size * grid_size) * obs[2]
     return obs
 
 
-# Klassifizierung des Ergebnisses einer Episode
-
+# Klassifikation des Episodenergebnisses
 def classify_episode_result(reward, cause, episode_reward, env_mode):
     success = False
 
@@ -85,8 +94,7 @@ def classify_episode_result(reward, cause, episode_reward, env_mode):
     return cause, success
 
 
-# Export-Ordner erstellen
-
+# Erstellung des Export-Ordners
 def setup_export():
     if EXPORT_PDF:
         Path(EXPORT_PATH).mkdir(exist_ok=True)
@@ -96,8 +104,7 @@ def setup_export():
 # Visualisierungsfunktionen
 # ============================================================================
 
-# Balkendiagramm für Erfolg vs. Misserfolg
-
+# Visualisierung der Erfolgsrate als Balkendiagramm
 def create_success_plot(results_solved, env_mode):
     plt.figure(figsize=(8, 5))
 
@@ -130,8 +137,7 @@ def create_success_plot(results_solved, env_mode):
     plt.show()
 
 
-# Reward-Histogramm
-
+# Visualisierung der Reward-Verteilung als Histogramm
 def create_reward_histogram(rewards_all, env_mode):
     avg_reward = np.mean(rewards_all)
 
@@ -157,9 +163,11 @@ def create_reward_histogram(rewards_all, env_mode):
 # Hauptfunktion
 # ============================================================================
 
-# Evaluiert die trainierte Policy über mehrere Episoden
-
+# Evaluation der trainierten Policy über mehrere Episoden
 def evaluate_policy():
+    # Seed für Reproduzierbarkeit setzen
+    set_all_seeds()
+
     # Initialisierung
     env, grid_size = initialize_environment()
     Q = load_q_table(ENV_MODE)
@@ -248,8 +256,7 @@ def evaluate_policy():
     create_reward_histogram(rewards_all, ENV_MODE)
 
 
-# Evaluationsergebnisse ausgeben
-
+# Ausgabe der Evaluationsergebnisse
 def print_results(results_cause, results_solved, rewards_all):
     avg_reward = np.mean(rewards_all)
 

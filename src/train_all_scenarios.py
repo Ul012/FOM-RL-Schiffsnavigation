@@ -17,6 +17,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '.')))
 # Drittanbieter
 import numpy as np
 import matplotlib.pyplot as plt
+import random
 
 # Lokale Module - direkte Imports für Training
 from navigation.environment.grid_environment import GridEnvironment
@@ -64,8 +65,20 @@ PARALLEL_TRAINING = False
 # Hilfsfunktionen
 # ============================================================================
 
+# Seed-Konfiguration für Reproduzierbarkeit
+def set_all_seeds(seed=None):
+    if seed is None:
+        from config import SEED
+        seed = SEED
+
+    random.seed(seed)
+    np.random.seed(seed)
+    print(f"Seeds gesetzt auf: {seed}")
+    return seed
+
+
+# Laden der aktuellen config.py Parameter
 def load_current_config():
-    """Aktuelle config.py Parameter laden"""
     # config.py als Modul importieren
     import importlib.util
     spec = importlib.util.spec_from_file_location("config", "config.py")
@@ -81,7 +94,8 @@ def load_current_config():
         "EPSILON": config_module.EPSILON,
         "LOOP_THRESHOLD": config_module.LOOP_THRESHOLD,
         "EXPORT_PDF": config_module.EXPORT_PDF,
-        "EXPORT_PATH": config_module.EXPORT_PATH
+        "EXPORT_PATH": config_module.EXPORT_PATH,
+        "SEED": config_module.SEED
     }
 
     print("✅ Parameter aus config.py geladen:")
@@ -91,8 +105,8 @@ def load_current_config():
     return config_params
 
 
+# Vorbereitung der Training-Umgebung
 def setup_training_environment(config_params):
-    """Training-Umgebung vorbereiten"""
     # Export-Ordner erstellen
     Path(config_params["EXPORT_PATH"]).mkdir(exist_ok=True)
 
@@ -108,12 +122,13 @@ def setup_training_environment(config_params):
     print(f"  Episodes: {config_params['EPISODES']}")
     print(f"  Max Steps: {config_params['MAX_STEPS']}")
     print(f"  Loop Threshold: {config_params['LOOP_THRESHOLD']}")
+    print(f"  Seed: {config_params['SEED']}")
     print(f"  Export-Pfad: {config_params['EXPORT_PATH']}")
     print(f"  Visualisierungen: {'Ja (interaktiv)' if SHOW_VISUALIZATIONS else 'Nein (nur PDF-Export)'}")
 
 
+# Aktualisierung der config.py für ein Szenario
 def update_config_for_scenario(scenario_name, scenario_config, config_params):
-    """config.py für Szenario aktualisieren"""
     config_content = f'''# config.py - Auto-generiert für Szenario: {scenario_name}
 # Generiert von train_all_scenarios.py am {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 
@@ -128,6 +143,7 @@ GRID_SIZE = 5
 # Training-Parameter
 # ============================================================================
 
+SEED = {config_params["SEED"]}
 EPISODES = {config_params["EPISODES"]}
 MAX_STEPS = {config_params["MAX_STEPS"]}
 ALPHA = {config_params["ALPHA"]}
@@ -176,8 +192,8 @@ import matplotlib
         f.write(config_content)
 
 
+# Erstellung eines config.py Backups
 def backup_config():
-    """config.py sichern"""
     if os.path.exists("config.py"):
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         backup_path = f"config_backup_{timestamp}.py"
@@ -191,8 +207,8 @@ def backup_config():
         print(f"Config-Backup erstellt: {backup_path}")
 
 
+# Ausführung des Trainings für ein einzelnes Szenario
 def run_training_for_scenario(scenario_name, scenario_config, config_params):
-    """Training für einzelnes Szenario ausführen"""
     print(f"\n{'=' * 60}")
     print(f"STARTE TRAINING: {scenario_name.upper()}")
     print(f"{'=' * 60}")
@@ -200,6 +216,7 @@ def run_training_for_scenario(scenario_name, scenario_config, config_params):
     print(f"Modus: {scenario_config['env_mode']}")
     print(f"Umgebung: {scenario_config['environment']}")
     print(f"Episodes: {config_params['EPISODES']}")
+    print(f"Seed: {config_params['SEED']}")
 
     start_time = time.time()
 
@@ -256,8 +273,8 @@ def run_training_for_scenario(scenario_name, scenario_config, config_params):
         return False
 
 
+# Ausführung aller Szenarien parallel
 def run_parallel_training():
-    """Alle Szenarien parallel trainieren"""
     print("🚀 PARALLEL TRAINING GESTARTET")
     print("Achtung: Parallel Training kann zu Ressourcen-Konflikten führen!")
 
@@ -287,8 +304,8 @@ run_training_for_scenario('{scenario_name}', scenario_config)
     return results
 
 
+# Ausführung aller Szenarien nacheinander
 def run_sequential_training(config_params):
-    """Alle Szenarien nacheinander trainieren"""
     print("🔄 SEQUENZIELLES TRAINING GESTARTET")
 
     results = {}
@@ -307,8 +324,8 @@ def run_sequential_training(config_params):
     return results
 
 
+# Erstellung der Training-Zusammenfassung
 def create_training_summary(results):
-    """Zusammenfassung des Trainings erstellen"""
     print(f"\n{'=' * 60}")
     print("TRAINING ZUSAMMENFASSUNG")
     print(f"{'=' * 60}")
@@ -339,17 +356,12 @@ def create_training_summary(results):
         print("💥 Alle Trainings fehlgeschlagen - Bitte Konfiguration prüfen.")
 
 
-def restore_original_config():
-    """Diese Funktion ist nicht mehr nötig"""
-    pass  # Entfernt - config.py wird nach jedem Training direkt wiederhergestellt
-
-
 # ============================================================================
 # Hauptfunktion
 # ============================================================================
 
+# Training aller Szenarien
 def train_all_scenarios():
-    """Hauptfunktion für Training aller Szenarien"""
     print("🏗️  MULTI-SZENARIO TRAINING")
     print(f"Anzahl Szenarien: {len(SCENARIOS)}")
     print(f"Training-Modus: {'Parallel' if PARALLEL_TRAINING else 'Sequenziell'}")
@@ -376,8 +388,8 @@ def train_all_scenarios():
 # Interaktive Funktionen
 # ============================================================================
 
+# Interaktive Auswahl der Szenarien
 def select_scenarios_interactively():
-    """Interaktive Szenario-Auswahl"""
     print("\nVerfügbare Szenarien:")
     scenario_list = list(SCENARIOS.items())
 
@@ -407,8 +419,8 @@ def select_scenarios_interactively():
         return SCENARIOS
 
 
+# Interaktive Konfiguration der Training-Parameter
 def configure_training_interactively():
-    """Interaktive Training-Konfiguration"""
     global SHOW_VISUALIZATIONS
 
     # Aktuelle config.py Parameter laden und anzeigen
@@ -437,8 +449,8 @@ def configure_training_interactively():
 # Ausführung
 # ============================================================================
 
+# Hauptfunktion mit Benutzerinteraktion
 def main():
-    """Hauptfunktion mit Benutzerinteraktion"""
     global SCENARIOS, PARALLEL_TRAINING
 
     print("=" * 60)
