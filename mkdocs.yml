@@ -1,12 +1,12 @@
 site_name: FOM RL Ship Navigation – Q-Learning
 
 nav:
-  - Home: index.md
+  - Startseite: index.md
   - Setup: setup.md
   - Funktionsweise: funktionsweise.md
-  - Visualisierung: visualisierung.md
   - Training: training.md
-  - Dokumentation: dokumentation.md
+  - Visualisierung: visualisierung.md
+  - Entwicklung: dokumentation.md
 
 theme:
   name: material

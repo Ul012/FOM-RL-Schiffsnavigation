@@ -10,6 +10,7 @@ Dieses Projekt implementiert Q-Learning zur autonomen Navigation eines Schiffes 
 - **Szenarien-Vergleich** mit statistischer Analyse
 - **Robuste Terminierungserkennung** (Erfolg, Timeout, Schleifen, Hindernisse)
 - **Professionelle Visualisierung** und PDF-Export
+- **Modulare Code-Architektur** mit wiederverwendbaren Utils
 - **Umfassende Dokumentation** mit MkDocs
 
 ## ⚙️ Installation
@@ -54,15 +55,20 @@ python evaluate_policy.py
 python visualize_policy.py
 ```
 
+### Q-Tabellen inspizieren
+```bash
+python inspect_q_tables.py
+```
+
 ## 🗺️ Verfügbare Szenarien
 
-| Szenario | Beschreibung | Komplexität |
-|----------|--------------|-------------|
-| `static` | Feste Positionen für Start, Ziel und Hindernisse | Niedrig |
-| `random_start` | Zufällige Startposition bei festem Ziel | Mittel |
-| `random_goal` | Feste Startposition mit zufälligem Ziel | Mittel |
-| `random_obstacles` | Variable Hindernispositionen pro Episode | Hoch |
-| `container` | Pickup/Dropoff-Aufgabe mit erweiterten Zuständen | Sehr hoch |
+| Szenario | Beschreibung | Komplexität | Emojis |
+|----------|--------------|-------------|---------|
+| `static` | Feste Positionen für Start, Ziel und Hindernisse | Niedrig | 🧭🏁🪨 |
+| `random_start` | Zufällige Startposition bei festem Ziel | Mittel | 🚢🏁🪨 |
+| `random_goal` | Feste Startposition mit zufälligem Ziel | Mittel | 🧭🏁🪨 |
+| `random_obstacles` | Variable Hindernispositionen pro Episode | Hoch | 🧭🏁🪨 |
+| `container` | Pickup/Dropoff-Aufgabe mit erweiterten Zuständen | Sehr hoch | 🚢📦🏁 |
 
 ## ⚙️ Konfiguration
 
@@ -89,15 +95,41 @@ ship-navigation-rl/
 │   ├── visualize_policy.py         # Visuelle Darstellung
 │   ├── inspect_q_tables.py         # Q-Tabellen-Analyse
 │   ├── config.py                   # Zentrale Konfiguration
-│   └── navigation/
-│       └── environment/
-│           ├── grid_environment.py      # Grid-Umgebung
-│           └── container_environment.py # Container-Umgebung
+│   ├── envs/                       # Umgebungs-Implementierungen
+│   │   ├── __init__.py
+│   │   ├── grid_environment.py     # Grid-Umgebung
+│   │   └── container_environment.py # Container-Umgebung
+│   └── utils/                      # Wiederverwendbare Module
+│       ├── __init__.py
+│       ├── common.py              # Basis-Hilfsfunktionen
+│       ├── environment.py         # Umgebungs-Initialisierung
+│       ├── qlearning.py           # Q-Learning Algorithmus
+│       ├── evaluation.py          # Bewertungslogik
+│       ├── position.py            # Position/State Konvertierungen
+│       ├── visualization.py       # Plotting-Funktionen
+│       └── reporting.py           # Ausgabe-Funktionen
 ├── exports/                        # Generierte Visualisierungen
 ├── docs/                          # MkDocs Dokumentation
 ├── requirements.txt
 └── README.md
 ```
+
+## 🎮 Visualisierung
+
+Das System verwendet intuitive Emojis für die visuelle Darstellung:
+
+### Grid-Umgebungen
+- 🚢 **Agent/Schiff** - Aktuelle Position
+- 🧭 **Start** - Startposition (bei festen Starts)
+- 🏁 **Ziel** - Zielposition
+- 🪨 **Hindernis** - Nicht passierbare Felder
+- ↑→↓← **Policy-Pfeile** - Optimale Aktionen der gelernten Policy
+
+### Container-Umgebung
+- 🚢 **Schiff** - Agent-Position
+- 📦 **Pickup** - Container-Abholposition
+- 🏁 **Dropoff** - Container-Abgabeposition (Ziel)
+- 🪨 **Hindernis** - Nicht passierbare Felder
 
 ## 📊 Wissenschaftliche Evaluierung
 
@@ -108,6 +140,15 @@ Analysemöglichkeiten:
 - **Lernkurven-Visualisierung** mit statistischen Metriken
 - **Parameter-Logging** für Reproduzierbarkeit
 - **Diagramme** mit PDF-Export
+
+## 🏗️ Code-Architektur
+
+Das Projekt folgt modernen Software-Engineering-Prinzipien:
+
+- **DRY-Prinzip**: Keine Code-Duplikation durch Utils-Module
+- **Modulare Struktur**: Klare Trennung von Verantwortlichkeiten
+- **Clean Code**: Lesbare und wartbare Implementierung
+- **Wiederverwendbarkeit**: Utils können in anderen RL-Projekten genutzt werden
 
 ## 📚 Dokumentation
 
@@ -122,5 +163,6 @@ Verfügbar unter: http://127.0.0.1:8000
 
 - **Framework**: OpenAI Gymnasium
 - **Algorithmus**: Q-Learning mit Epsilon-Greedy-Exploration
-- **Visualisierung**: Matplotlib mit PDF-Export
+- **Visualisierung**: Matplotlib mit PDF-Export, Pygame für interaktive Darstellung
 - **Dokumentation**: MkDocs mit Material Theme
+- **Code-Struktur**: Modulare Python-Pakete mit Utils-Bibliothek

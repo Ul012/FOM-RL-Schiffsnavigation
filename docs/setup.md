@@ -36,7 +36,40 @@ pip install -r requirements.txt
 ### 5. Installation verifizieren
 ```bash
 cd src
-python -c "import gymnasium, numpy, matplotlib; print('Installation erfolgreich')"
+python -c "import gymnasium, numpy, matplotlib, pygame; print('Installation erfolgreich')"
+```
+
+## Projektstruktur
+
+Nach der Installation haben Sie folgende Struktur:
+
+```
+ship-navigation-rl/
+├── src/
+│   ├── train.py                    # Einzelszenario-Training
+│   ├── train_all_scenarios.py      # Multi-Szenario-Training
+│   ├── compare_scenarios.py        # Szenarien-Vergleich
+│   ├── evaluate_policy.py          # Policy-Evaluation
+│   ├── visualize_policy.py         # Visuelle Darstellung
+│   ├── inspect_q_tables.py         # Q-Tabellen-Analyse
+│   ├── config.py                   # Zentrale Konfiguration
+│   ├── envs/                       # Umgebungs-Implementierungen
+│   │   ├── __init__.py
+│   │   ├── grid_environment.py     # Grid-Umgebung
+│   │   └── container_environment.py # Container-Umgebung
+│   └── utils/                      # Wiederverwendbare Module
+│       ├── __init__.py
+│       ├── common.py              # Basis-Hilfsfunktionen
+│       ├── environment.py         # Umgebungs-Initialisierung
+│       ├── qlearning.py           # Q-Learning Algorithmus
+│       ├── evaluation.py          # Bewertungslogik
+│       ├── position.py            # Position/State Konvertierungen
+│       ├── visualization.py       # Plotting-Funktionen
+│       └── reporting.py           # Ausgabe-Funktionen
+├── exports/                        # Generierte Visualisierungen
+├── docs/                          # MkDocs Dokumentation
+├── requirements.txt
+└── README.md
 ```
 
 ## Grundlegende Verwendung
@@ -78,40 +111,84 @@ Evaluiert eine trainierte Policy ohne weitere Lernschritte.
 python visualize_policy.py
 ```
 
-Zeigt die gelernte Policy in einer animierten Darstellung.
+Zeigt die gelernte Policy in einer animierten Pygame-Darstellung mit Emojis:
+- 🚢 Agent/Schiff
+- 🧭 Start (bei Grid-Umgebungen)
+- 📦 Pickup (bei Container-Umgebung)
+- 🏁 Ziel/Dropoff
+- 🪨 Hindernisse
+- ↑→↓← Policy-Pfeile
+
+### Q-Tabellen-Inspektion
+```bash
+python inspect_q_tables.py
+```
+
+Analysiert und vergleicht Q-Tabellen verschiedener Szenarien mit interaktiven Optionen.
 
 ## Konfiguration
 
 ### Zentrale Parameter in config.py
 ```python
-ENV_MODE = "static"           # Szenario-Auswahl
-EPISODES = 2000              # Anzahl Trainings-Episoden
-MAX_STEPS = 50               # Maximale Schritte pro Episode
-ALPHA = 0.1                  # Lernrate
-GAMMA = 0.9                  # Diskontierungsfaktor
-EPSILON = 0.1                # Explorationsrate
+ENV_MODE                     # Szenario-Auswahl ("static", "container", etc.)
+EPISODES                     # Anzahl Trainings-Episoden
+MAX_STEPS                    # Maximale Schritte pro Episode
+ALPHA                        # Lernrate (typisch: 0.05-0.2)
+GAMMA                        # Diskontierungsfaktor (typisch: 0.9-0.99)
+EPSILON                      # Explorationsrate (typisch: 0.05-0.3)
 ```
 
 ### Evaluations-Parameter
 ```python
-EVAL_EPISODES = 500          # Episoden für Szenario-Vergleich
-EVAL_MAX_STEPS = 50          # Maximale Schritte bei Evaluation
-LOOP_THRESHOLD = 25          # Schwellwert für Schleifenerkennung
+EVAL_EPISODES                # Episoden für Szenario-Vergleich
+EVAL_MAX_STEPS               # Maximale Schritte bei Evaluation
+LOOP_THRESHOLD               # Schwellwert für Schleifenerkennung
 ```
 
 ### Export-Einstellungen
 ```python
-EXPORT_PDF = True            # PDF-Export aktivieren
-EXPORT_PATH = "exports/"     # Zielordner für Exports
+EXPORT_PDF                   # PDF-Export aktivieren (True/False)
+EXPORT_PATH                  # Zielordner für Exports
 ```
+
+### Visualisierungs-Parameter
+```python
+CELL_SIZE                    # Größe einer Grid-Zelle in Pixeln
+FRAME_DELAY                  # Verzögerung zwischen Frames (Sekunden)
+SHOW_VISUALIZATIONS          # Interaktive Diagramme anzeigen (True/False)
+```
+
+## Verfügbare Szenarien
+
+Das System unterstützt folgende Umgebungsszenarien:
+
+| Szenario | ENV_MODE | Beschreibung |
+|----------|----------|--------------|
+| Statisch | `"static"` | Feste Positionen (🧭🏁🪨) |
+| Zufälliger Start | `"random_start"` | Variable Startposition (🚢🏁🪨) |
+| Zufälliges Ziel | `"random_goal"` | Variable Zielposition (🧭🏁🪨) |
+| Zufällige Hindernisse | `"random_obstacles"` | Variable Hindernisse (🧭🏁🪨) |
+| Container | `"container"` | Pickup/Dropoff-Aufgabe (🚢📦🏁) |
 
 ## Fehlerbehebung
 
 ### Häufige Probleme
 
-**ModuleNotFoundError bei Gymnasium:**
+**ModuleNotFoundError bei Imports:**
 ```bash
-pip install gymnasium[classic_control]
+# Utils-Module nicht gefunden
+cd src
+python -c "from utils import set_all_seeds; print('Utils OK')"
+
+# Environment-Module nicht gefunden  
+python -c "from envs import GridEnvironment; print('Envs OK')"
+```
+
+**Pygame-Fenster nicht sichtbar:**
+```bash
+# Pygame-Installation überprüfen
+pip install --upgrade pygame
+python -c "import pygame; pygame.init(); print('Pygame OK')"
 ```
 
 **Matplotlib-Darstellungsfehler:**
@@ -119,9 +196,19 @@ pip install gymnasium[classic_control]
 pip install --upgrade matplotlib
 ```
 
-**Probleme mit Python 3.12:**
+**Q-Tabelle nicht gefunden:**
 ```bash
-pip install setuptools wheel
+# Erst Training durchführen
+python train.py
+# Dann Visualisierung
+python visualize_policy.py
+```
+
+### Cache-Probleme beheben
+```bash
+# Python-Cache löschen
+find . -name "*.pyc" -delete
+find . -name "__pycache__" -delete
 ```
 
 ### Abhängigkeiten aktualisieren
@@ -133,6 +220,24 @@ pip install --upgrade -r requirements.txt
 ```bash
 pip freeze > requirements.txt
 ```
+
+## Import-System
+
+Das Projekt nutzt eine modulare Import-Struktur:
+
+```python
+# Utils-Module importieren
+from utils import set_all_seeds, load_q_table
+from utils.visualization import create_learning_curve
+
+# Environment-Module importieren  
+from envs import GridEnvironment, ContainerShipEnv
+```
+
+Bei Import-Problemen prüfen Sie:
+1. Korrekte Ordnerstruktur (`envs/` und `utils/` vorhanden)
+2. `__init__.py` Dateien in allen Package-Ordnern
+3. Aktueller Pfad (`cd src` vor Ausführung)
 
 ## Dokumentation
 
