@@ -47,7 +47,6 @@ LOOP_THRESHOLD = 10 # Schleifenwiederholungen für Abbruch (initial: 6)
 # ============================================================================
 
 EVAL_EPISODES = 500  # Anzahl Episoden für Evaluation
-CONVERGENCE_THRESHOLD = 0.8  # 80% Erfolgsrate für Konvergenz-Bestimmung
 EVAL_MAX_STEPS = 50  # Max. Schritte pro Episode in Evaluation (initial: 100)
 
 # ============================================================================
