@@ -9,9 +9,9 @@ def get_position(obs, env_mode):
     return divmod(obs, GRID_SIZE)
 
 # Konvertierung von Position zu State-Index für Grid
-def pos_to_state_grid(pos, grid_size):
+def pos_to_state_grid(pos, grid_size=GRID_SIZE):
     return pos[0] * grid_size + pos[1]
 
 # Konvertierung von State-Index zu Position für Grid
-def state_to_pos_grid(state, grid_size):
+def state_to_pos_grid(state, grid_size=GRID_SIZE):
     return (state // grid_size, state % grid_size)

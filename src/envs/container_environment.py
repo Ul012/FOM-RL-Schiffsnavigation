@@ -7,7 +7,7 @@
 import sys
 import os
 
-# Projektstruktur für Imports anpassen - GEÄNDERT
+# Projektstruktur für Imports anpassen
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 # Drittanbieter
@@ -15,8 +15,9 @@ import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 
-# Lokale Module - GEÄNDERT: config statt src.config
-from config import REWARDS
+# Lokale Module
+from config import (REWARDS, GRID_SIZE, N_ACTIONS, CONTAINER_START_POS,
+                    CONTAINER_OBSTACLES)
 
 
 # ============================================================================
@@ -28,13 +29,13 @@ class ContainerShipEnv(gym.Env):
 
     def __init__(self):
         super(ContainerShipEnv, self).__init__()
-        self.grid_size = 5
-        self.start_pos = (0, 0)
-        self.obstacles = [(1, 3), (1, 2), (3, 1)]
+        self.grid_size = GRID_SIZE  # Aus config statt hardcoded
+        self.start_pos = CONTAINER_START_POS  # Aus config
+        self.obstacles = CONTAINER_OBSTACLES  # Aus config
         self.max_steps = 300
 
         self.observation_space = spaces.MultiDiscrete([self.grid_size, self.grid_size, 2])
-        self.action_space = spaces.Discrete(4)
+        self.action_space = spaces.Discrete(N_ACTIONS)  # Aus config statt hardcoded
 
         self.np_random = None
         self._initialize_environment()
@@ -85,13 +86,13 @@ class ContainerShipEnv(gym.Env):
     def get_next_position(self, current_pos, action):
         x, y = current_pos
 
-        if action == 0 and x > 0:
+        if action == 0 and x > 0:  # UP
             x -= 1
-        elif action == 1 and y < self.grid_size - 1:
+        elif action == 1 and y < self.grid_size - 1:  # RIGHT
             y += 1
-        elif action == 2 and x < self.grid_size - 1:
+        elif action == 2 and x < self.grid_size - 1:  # DOWN
             x += 1
-        elif action == 3 and y > 0:
+        elif action == 3 and y > 0:  # LEFT
             y -= 1
 
         return (x, y)

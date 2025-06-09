@@ -1,13 +1,28 @@
 # config.py
 
 # ============================================================================
+# Basis-Parameter
+# ============================================================================
+
+# Grid Constants
+GRID_SIZE = 5
+N_ACTIONS = 4
+
+# Standard Grid Layout (für alle Grid-Modi)
+DEFAULT_START_POS = (0, 0)
+DEFAULT_GOAL_POS = (4, 4)
+DEFAULT_OBSTACLES = [(1, 1), (2, 3), (3, 1)]
+
+# Container Environment Layout
+CONTAINER_START_POS = (0, 0)
+CONTAINER_OBSTACLES = [(1, 3), (1, 2), (3, 1)]
+
+# ============================================================================
 # Umgebungskonfiguration
 # ============================================================================
 
-ENV_MODE = "container"  # Optionen: static, random_start, random_goal, random_obstacles, container
-GRID_SIZE = 5
-ACTIONS = 4  # 0 = oben, 1 = rechts, 2 = unten, 3 = links
-SEED = 42 # Random seed für Reproduzierbarkeit
+ENV_MODE = "static"  # Optionen: static, random_start, random_goal, random_obstacles, container
+SEED = 42  # Random seed für Reproduzierbarkeit
 
 # ============================================================================
 # Rewardsystem
@@ -27,12 +42,9 @@ REWARDS = {
 # Q-Learning Parameter
 # ============================================================================
 
-ALPHA = 0.1 # Lernrate
-GAMMA = 0.95 # Diskontierungsfaktor
-EPSILON = 0.1 # Explorationsrate (initial: 0.1)
-# EPSILON_DECAY = START_EPSILON / (EPISODES / 2)
-# EPSILON_START = 1.0
-# EPSILON_FINAL = 0.1
+ALPHA = 0.1  # Lernrate
+GAMMA = 0.95  # Diskontierungsfaktor
+EPSILON = 0.1  # Explorationsrate (initial: 0.1)
 EPISODES = 500  # Trainings-Episoden
 
 # ============================================================================
@@ -40,7 +52,7 @@ EPISODES = 500  # Trainings-Episoden
 # ============================================================================
 
 MAX_STEPS = 100  # Max. Schritte pro Episode
-LOOP_THRESHOLD = 10 # Schleifenwiederholungen für Abbruch (initial: 6)
+LOOP_THRESHOLD = 10  # Schleifenwiederholungen für Abbruch (initial: 6)
 
 # ============================================================================
 # Evaluation Parameter

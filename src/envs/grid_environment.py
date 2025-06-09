@@ -7,7 +7,7 @@
 import sys
 import os
 
-# Projektstruktur für Imports anpassen - GEÄNDERT
+# Projektstruktur für Imports anpassen
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 # Drittanbieter
@@ -15,8 +15,9 @@ import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 
-# Lokale Module - GEÄNDERT: src/config statt ../../config
-from config import REWARDS
+# Lokale Module
+from config import (REWARDS, GRID_SIZE, N_ACTIONS, DEFAULT_START_POS,
+                    DEFAULT_GOAL_POS, DEFAULT_OBSTACLES)
 
 
 # ============================================================================
@@ -29,9 +30,9 @@ class GridEnvironment(gym.Env):
     def __init__(self, mode="static"):
         super(GridEnvironment, self).__init__()
         self.mode = mode
-        self.grid_size = 5
+        self.grid_size = GRID_SIZE  # Aus config statt hardcoded
         self.observation_space = spaces.Discrete(self.grid_size * self.grid_size)
-        self.action_space = spaces.Discrete(4)
+        self.action_space = spaces.Discrete(N_ACTIONS)  # Aus config statt hardcoded
 
         self.max_steps = 50
         self.loop_threshold = 6
@@ -44,9 +45,10 @@ class GridEnvironment(gym.Env):
         self.visited_states = {}
         self.current_steps = 0
 
-        self.start_pos = (0, 0)
-        self.goal_pos = (4, 4)
-        self.obstacles = [(1, 1), (2, 3), (3, 1)]
+        # Standard-Layout aus config.py
+        self.start_pos = DEFAULT_START_POS
+        self.goal_pos = DEFAULT_GOAL_POS
+        self.obstacles = DEFAULT_OBSTACLES
 
         self.agent_pos = self.start_pos
         self.state = self.pos_to_state(self.start_pos)
@@ -60,9 +62,10 @@ class GridEnvironment(gym.Env):
         all_positions = [(i, j) for i in range(self.grid_size) for j in range(self.grid_size)]
 
         if self.mode == "random_start":
+            # Nur start_pos ändern, goal_pos und obstacles bleiben DEFAULT
             possible_starts = all_positions.copy()
-            possible_starts.remove(self.goal_pos)
-            for obstacle in self.obstacles:
+            possible_starts.remove(self.goal_pos)  # DEFAULT_GOAL_POS
+            for obstacle in self.obstacles:  # DEFAULT_OBSTACLES
                 if obstacle in possible_starts:
                     possible_starts.remove(obstacle)
 
@@ -74,9 +77,10 @@ class GridEnvironment(gym.Env):
                 self.start_pos = random.choice(possible_starts)
 
         elif self.mode == "random_goal":
+            # Nur goal_pos ändern, start_pos und obstacles bleiben DEFAULT
             possible_goals = all_positions.copy()
-            possible_goals.remove(self.start_pos)
-            for obstacle in self.obstacles:
+            possible_goals.remove(self.start_pos)  # DEFAULT_START_POS
+            for obstacle in self.obstacles:  # DEFAULT_OBSTACLES
                 if obstacle in possible_goals:
                     possible_goals.remove(obstacle)
 
@@ -88,9 +92,10 @@ class GridEnvironment(gym.Env):
                 self.goal_pos = random.choice(possible_goals)
 
         elif self.mode == "random_obstacles":
+            # Nur obstacles ändern, start_pos und goal_pos bleiben DEFAULT
             available_positions = all_positions.copy()
-            available_positions.remove(self.start_pos)
-            available_positions.remove(self.goal_pos)
+            available_positions.remove(self.start_pos)  # DEFAULT_START_POS
+            available_positions.remove(self.goal_pos)   # DEFAULT_GOAL_POS
 
             if self.np_random is not None:
                 obstacle_indices = self.np_random.choice(len(available_positions), 3, replace=False)
@@ -98,6 +103,8 @@ class GridEnvironment(gym.Env):
             else:
                 import random
                 self.obstacles = random.sample(available_positions, k=3)
+
+        # static: alles bleibt bei DEFAULT-Werten
 
         self.agent_pos = self.start_pos
         self.state = self.pos_to_state(self.start_pos)
@@ -115,13 +122,13 @@ class GridEnvironment(gym.Env):
         row, col = current_pos
         new_row, new_col = row, col
 
-        if action == 0 and row > 0:
+        if action == 0 and row > 0:  # UP
             new_row = row - 1
-        elif action == 1 and col < self.grid_size - 1:
+        elif action == 1 and col < self.grid_size - 1:  # RIGHT
             new_col = col + 1
-        elif action == 2 and row < self.grid_size - 1:
+        elif action == 2 and row < self.grid_size - 1:  # DOWN
             new_row = row + 1
-        elif action == 3 and col > 0:
+        elif action == 3 and col > 0:  # LEFT
             new_col = col - 1
 
         return (new_row, new_col)

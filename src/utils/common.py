@@ -3,7 +3,7 @@
 import random
 import numpy as np
 from pathlib import Path
-from config import SEED, EXPORT_PDF, EXPORT_PATH
+from config import SEED, EXPORT_PDF, EXPORT_PATH, GRID_SIZE
 
 
 # Seed-Konfiguration für Reproduzierbarkeit
@@ -20,6 +20,8 @@ def set_all_seeds(seed=None):
 # Zustandscodierung je nach Umgebungstyp
 def obs_to_state(obs, env_mode, grid_size=None):
     if env_mode == "container":
+        if grid_size is None:
+            grid_size = GRID_SIZE
         return obs[0] * grid_size + obs[1] + (grid_size * grid_size) * obs[2]
     return obs
 

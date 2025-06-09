@@ -1,12 +1,15 @@
 # utils/environment.py
 
+from config import GRID_SIZE
+
+
 # Initialisierung der Umgebung
 def initialize_environment(env_mode):
     from envs.grid_environment import GridEnvironment
     from envs.container_environment import ContainerShipEnv
 
     env = ContainerShipEnv() if env_mode == "container" else GridEnvironment(mode=env_mode)
-    grid_size = env.grid_size
+    grid_size = env.grid_size  # Kommt jetzt aus GRID_SIZE constant
     print(f"Umgebung initialisiert: {env_mode}-Modus, Grid-Größe: {grid_size}x{grid_size}")
     return env, grid_size
 
@@ -20,4 +23,4 @@ def initialize_environment_for_scenario(scenario_config):
         env = ContainerShipEnv()
     else:
         env = GridEnvironment(mode=scenario_config["env_mode"])
-    return env, env.grid_size
+    return env, env.grid_size  # Kommt jetzt aus GRID_SIZE constant
