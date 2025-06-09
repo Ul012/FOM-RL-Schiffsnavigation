@@ -7,16 +7,16 @@
 import sys
 import os
 
-# Projektstruktur für Imports anpassen
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
+# Projektstruktur für Imports anpassen - GEÄNDERT
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 # Drittanbieter
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 
-# Lokale Module
-from src.config import REWARDS
+# Lokale Module - GEÄNDERT: config statt src.config
+from config import REWARDS
 
 
 # ============================================================================

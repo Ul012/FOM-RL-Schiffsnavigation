@@ -6,210 +6,22 @@
 
 import sys
 import os
-from pathlib import Path
 
 # Projektstruktur für Import anpassen
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), ".")))
 
 # Drittanbieter
 import numpy as np
-import matplotlib.pyplot as plt
-from collections import defaultdict
-import random
 
 # Lokale Module
-from config import (ENV_MODE, EPISODES, MAX_STEPS, ALPHA, GAMMA, EPSILON,
-                    ACTIONS, REWARDS, GRID_SIZE, Q_TABLE_PATH,
-                    EXPORT_PDF, EXPORT_PATH, SEED)
-from navigation.environment.grid_environment import GridEnvironment
-from navigation.environment.container_environment import ContainerShipEnv
+from config import ENV_MODE, EPISODES, MAX_STEPS, EPSILON, ALPHA, GAMMA, SEED
 
-
-# ============================================================================
-# Hilfsfunktionen
-# ============================================================================
-
-# Seed-Konfiguration für Reproduzierbarkeit
-def set_all_seeds(seed=None):
-    if seed is None:
-        seed = SEED
-
-    random.seed(seed)
-    np.random.seed(seed)
-    print(f"Seeds gesetzt auf: {seed}")
-    return seed
-
-
-# Initialisierung der Umgebung
-def initialize_environment():
-    env = ContainerShipEnv() if ENV_MODE == "container" else GridEnvironment(mode=ENV_MODE)
-    grid_size = env.grid_size
-    print(f"Umgebung initialisiert: {ENV_MODE}-Modus, Grid-Größe: {grid_size}x{grid_size}")
-    return env, grid_size
-
-
-# Zustandscodierung je nach Umgebungstyp
-def obs_to_state(obs, env_mode=ENV_MODE, grid_size=None):
-    if env_mode == "container":
-        return obs[0] * grid_size + obs[1] + (grid_size * grid_size) * obs[2]
-    return obs
-
-
-# Initialisierung der Q-Tabelle
-def initialize_q_table(env):
-    n_states = env.observation_space.n if hasattr(env.observation_space, 'n') else np.prod(env.observation_space.nvec)
-    n_actions = env.action_space.n
-    Q = np.zeros((n_states, n_actions))
-    print(f"Q-Tabelle initialisiert: {n_states} Zustände, {n_actions} Aktionen")
-    return Q, n_states, n_actions
-
-
-# Epsilon-greedy Aktionsauswahl
-def select_action(Q, state, epsilon, n_actions):
-    if np.random.rand() < epsilon:
-        return np.random.choice(n_actions)
-    else:
-        return np.argmax(Q[state])
-
-
-# Q-Wert Update (Q-Learning)
-def update_q_value(Q, state, action, reward, next_state, alpha=ALPHA, gamma=GAMMA):
-    Q[state, action] += alpha * (reward + gamma * np.max(Q[next_state]) - Q[state, action])
-
-
-# Erfolgserkennung je nach Umgebungstyp
-def check_success(reward, env_mode):
-    if env_mode == "container":
-        return reward == REWARDS["dropoff"]
-    else:  # Grid-Environment
-        return reward == REWARDS["goal"]
-
-
-# Speicherung der Q-Tabelle
-def save_q_table(Q, env_mode=ENV_MODE):
-    filepath = f"q_table_{env_mode}.npy"
-    np.save(filepath, Q)
-    print(f"Q-Tabelle gespeichert: {filepath}")
-
-
-# Erstellung des Export-Ordners
-def setup_export():
-    if EXPORT_PDF:
-        Path(EXPORT_PATH).mkdir(exist_ok=True)
-
-
-# ============================================================================
-# Visualisierungsfunktionen
-# ============================================================================
-
-# Erstellung der Lernkurve mit Moving Average
-def create_learning_curve(rewards_per_episode, env_mode, window_size=20):
-    plt.figure(figsize=(12, 6))
-
-    # Raw Rewards
-    plt.plot(rewards_per_episode, alpha=0.3, label="Raw Reward", color='blue')
-
-    # Moving Average
-    if len(rewards_per_episode) >= window_size:
-        moving_avg = np.convolve(rewards_per_episode, np.ones(window_size) / window_size, mode='valid')
-        plt.plot(range(window_size - 1, len(rewards_per_episode)), moving_avg,
-                 label=f"Moving Average ({window_size})", color='red', linewidth=2)
-
-    plt.xlabel("Episode")
-    plt.ylabel("Gesamtreward")
-    plt.title(f"Lernkurve ({env_mode}-Modus)")
-    plt.legend()
-    plt.grid(True, alpha=0.3)
-    plt.tight_layout()
-
-    # PDF Export
-    if EXPORT_PDF:
-        plt.savefig(f"{EXPORT_PATH}/train_learning_curve.pdf", format='pdf', bbox_inches='tight')
-        print(f"Learning Curve gespeichert: {EXPORT_PATH}/train_learning_curve.pdf")
-
-    plt.show()
-
-
-# Erstellung der Erfolgskurve
-def create_success_curve(success_per_episode, env_mode):
-    plt.figure(figsize=(12, 4))
-    plt.plot(success_per_episode, label="Ziel erreicht", color='green', alpha=0.7, linewidth=1)
-
-    # Moving Average für Erfolgsrate
-    window_size = min(max(10, EPISODES // 20), len(success_per_episode) // 10)
-    if len(success_per_episode) >= window_size:
-        success_moving_avg = np.convolve(success_per_episode, np.ones(window_size) / window_size, mode='valid')
-        plt.plot(range(window_size - 1, len(success_per_episode)), success_moving_avg,
-                 label=f"Erfolgsrate MA ({window_size})", color='darkgreen', linewidth=2)
-
-    plt.xlabel("Episode")
-    plt.ylabel("Erfolg (0/1)")
-    plt.title(f"Zielerreichung pro Episode ({env_mode}-Modus)")
-    plt.legend()
-    plt.grid(True, alpha=0.3)
-    plt.tight_layout()
-
-    # PDF Export
-    if EXPORT_PDF:
-        plt.savefig(f"{EXPORT_PATH}/train_success_curve.pdf", format='pdf', bbox_inches='tight')
-        print(f"Success Curve gespeichert: {EXPORT_PATH}/train_success_curve.pdf")
-
-    plt.show()
-
-
-# Erstellung der Trainingsstatistiken
-def create_training_statistics(rewards_per_episode, success_per_episode, env_mode):
-    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(15, 10))
-
-    # Reward-Histogramm
-    ax1.hist(rewards_per_episode, bins=30, edgecolor='black', alpha=0.7, color='skyblue')
-    ax1.set_title("Verteilung der Episode-Rewards")
-    ax1.set_xlabel("Reward")
-    ax1.set_ylabel("Häufigkeit")
-    ax1.axvline(np.mean(rewards_per_episode), color='red', linestyle='--',
-                label=f'Durchschnitt: {np.mean(rewards_per_episode):.2f}')
-    ax1.legend()
-    ax1.grid(True, alpha=0.3)
-
-    # Erfolgsrate über Zeit (kumulativ)
-    cumulative_success = np.cumsum(success_per_episode) / np.arange(1, len(success_per_episode) + 1)
-    ax2.plot(cumulative_success, color='green', linewidth=2)
-    ax2.set_title("Kumulative Erfolgsrate")
-    ax2.set_xlabel("Episode")
-    ax2.set_ylabel("Erfolgsrate")
-    ax2.grid(True, alpha=0.3)
-
-    # Reward-Entwicklung (letzte X Episoden)
-    display_episodes = min(1000, EPISODES // 2)
-    ax3.plot(rewards_per_episode[-display_episodes:], alpha=0.6, color='blue')
-    ax3.set_title(f"Reward-Entwicklung (letzte {display_episodes} Episoden)")
-    ax3.set_xlabel("Episode")
-    ax3.set_ylabel("Reward")
-    ax3.grid(True, alpha=0.3)
-
-    # Erfolg vs. Misserfolg (Balkendiagramm)
-    total_success = sum(success_per_episode)
-    total_failure = len(success_per_episode) - total_success
-    ax4.bar(['Erfolg', 'Misserfolg'], [total_success, total_failure],
-            color=['green', 'red'], alpha=0.7)
-    ax4.set_title("Erfolg vs. Misserfolg")
-    ax4.set_ylabel("Anzahl Episoden")
-
-    # Prozentwerte auf Balken
-    for i, v in enumerate([total_success, total_failure]):
-        percentage = (v / len(success_per_episode)) * 100
-        ax4.text(i, v + len(success_per_episode) * 0.01, f'{v}\n({percentage:.1f}%)',
-                 ha='center', va='bottom')
-
-    plt.suptitle(f"Trainingsstatistiken ({env_mode}-Modus)", fontsize=16)
-    plt.tight_layout()
-
-    # PDF Export
-    if EXPORT_PDF:
-        plt.savefig(f"{EXPORT_PATH}/train_statistics.pdf", format='pdf', bbox_inches='tight')
-        print(f"Training Statistics gespeichert: {EXPORT_PATH}/train_statistics.pdf")
-
-    plt.show()
+# Utils
+from utils.common import set_all_seeds, obs_to_state, check_success, setup_export
+from utils.environment import initialize_environment
+from utils.qlearning import initialize_q_table, select_action, update_q_value, save_q_table
+from utils.visualization import create_learning_curve, create_success_curve, create_training_statistics
+from utils.reporting import print_training_results
 
 
 # ============================================================================
@@ -222,7 +34,7 @@ def train_agent():
     set_all_seeds()
 
     # Initialisierung
-    env, grid_size = initialize_environment()
+    env, grid_size = initialize_environment(ENV_MODE)
     Q, n_states, n_actions = initialize_q_table(env)
     setup_export()
 
@@ -292,49 +104,6 @@ def train_agent():
     create_training_statistics(rewards_per_episode, success_per_episode, ENV_MODE)
 
     return Q, rewards_per_episode, success_per_episode
-
-
-# Ausgabe der Trainingsergebnisse
-def print_training_results(rewards_per_episode, success_per_episode, steps_per_episode):
-    total_successes = sum(success_per_episode)
-    avg_reward = np.mean(rewards_per_episode)
-    avg_steps = np.mean(steps_per_episode)
-
-    print(f"\n" + "=" * 60)
-    print(f"TRAININGSERGEBNISSE ({EPISODES} Episoden, Modus: {ENV_MODE})")
-    print("=" * 60)
-
-    print(f"\nErfolgsstatistik:")
-    print(f"  Erfolgreiche Episoden: {total_successes}/{EPISODES} ({(total_successes / EPISODES) * 100:.1f}%)")
-
-    # Erfolgsrate in verschiedenen Phasen
-    phase_size = min(500, EPISODES // 4)
-    if len(success_per_episode) >= phase_size * 2:
-        early_success = np.mean(success_per_episode[:phase_size]) * 100
-        late_success = np.mean(success_per_episode[-phase_size:]) * 100
-        print(f"  Frühe Phase (erste {phase_size}): {early_success:.1f}%")
-        print(f"  Späte Phase (letzte {phase_size}): {late_success:.1f}%")
-        print(f"  Verbesserung: {late_success - early_success:+.1f} Prozentpunkte")
-
-    print(f"\nReward-Statistiken:")
-    print(f"  Durchschnitt: {avg_reward:.2f}")
-    print(f"  Minimum: {min(rewards_per_episode):.2f}")
-    print(f"  Maximum: {max(rewards_per_episode):.2f}")
-    print(f"  Standardabweichung: {np.std(rewards_per_episode):.2f}")
-
-    print(f"\nSchritt-Statistiken:")
-    print(f"  Durchschnittliche Schritte: {avg_steps:.1f}")
-    print(f"  Minimum: {min(steps_per_episode)}")
-    print(f"  Maximum: {max(steps_per_episode)}")
-
-    print(f"\nHyperparameter:")
-    print(f"  Lernrate (α): {ALPHA}")
-    print(f"  Discount Factor (γ): {GAMMA}")
-    print(f"  Epsilon (ε): {EPSILON}")
-    print(f"  Seed: {SEED}")
-
-    if EXPORT_PDF:
-        print(f"\nPDF-Exports gespeichert in: {EXPORT_PATH}")
 
 
 # ============================================================================

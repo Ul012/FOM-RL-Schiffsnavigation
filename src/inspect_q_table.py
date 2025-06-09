@@ -16,6 +16,9 @@ import numpy as np
 # Lokale Module
 from config import ENV_MODE
 
+# Utils
+from utils.qlearning import load_q_table
+
 # ============================================================================
 # Konfiguration
 # ============================================================================
@@ -38,8 +41,8 @@ DISPLAY_COLS = 4
 # Hilfsfunktionen
 # ============================================================================
 
-def load_q_table(filepath):
-    """Q-Tabelle laden"""
+def load_q_table_for_inspection(filepath):
+    """Q-Tabelle für Inspektion laden"""
     try:
         q_table = np.load(filepath)
         print(f"Q-Tabelle erfolgreich geladen: {filepath}")
@@ -195,7 +198,7 @@ def inspect_single_q_table(scenario_name):
         return
 
     filepath = AVAILABLE_Q_TABLES[scenario_name]
-    q_table = load_q_table(filepath)
+    q_table = load_q_table_for_inspection(filepath)
 
     if q_table is not None:
         display_q_table_overview(q_table, scenario_name)
@@ -242,7 +245,7 @@ def compare_q_table_shapes():
 
     for scenario_name, filepath in AVAILABLE_Q_TABLES.items():
         if os.path.exists(filepath):
-            q_table = load_q_table(filepath)
+            q_table = load_q_table_for_inspection(filepath)
             if q_table is not None:
                 shape = q_table.shape
                 status = "✓ Geladen"
@@ -297,7 +300,7 @@ def main():
             scenario = input("Szenario für Matrix-Anzeige eingeben: ").strip()
             if scenario in AVAILABLE_Q_TABLES:
                 filepath = AVAILABLE_Q_TABLES[scenario]
-                q_table = load_q_table(filepath)
+                q_table = load_q_table_for_inspection(filepath)
                 display_full_q_table_matrix(q_table, scenario)
             else:
                 print(f"FEHLER: Unbekanntes Szenario '{scenario}'")

@@ -20,8 +20,11 @@ import matplotlib.pyplot as plt
 import random
 
 # Lokale Module - direkte Imports für Training
-from navigation.environment.grid_environment import GridEnvironment
-from navigation.environment.container_environment import ContainerShipEnv
+from envs.grid_environment import GridEnvironment
+from envs.container_environment import ContainerShipEnv
+
+# Utils
+from utils.common import set_all_seeds
 
 # ============================================================================
 # Konfiguration
@@ -64,18 +67,6 @@ PARALLEL_TRAINING = False
 # ============================================================================
 # Hilfsfunktionen
 # ============================================================================
-
-# Seed-Konfiguration für Reproduzierbarkeit
-def set_all_seeds(seed=None):
-    if seed is None:
-        from config import SEED
-        seed = SEED
-
-    random.seed(seed)
-    np.random.seed(seed)
-    print(f"Seeds gesetzt auf: {seed}")
-    return seed
-
 
 # Laden der aktuellen config.py Parameter
 def load_current_config():

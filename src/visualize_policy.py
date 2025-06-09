@@ -6,74 +6,25 @@
 
 import sys
 import os
-from pathlib import Path
 
 # Projektstruktur für Import anpassen
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), ".")))
 
 # Drittanbieter
 import pygame
 import numpy as np
 import time
-import random
 
 # Lokale Module
 from config import (ENV_MODE, MAX_STEPS, GRID_SIZE, Q_TABLE_PATH,
                     CELL_SIZE, FRAME_DELAY, EXPORT_PDF, EXPORT_PATH, REWARDS, SEED)
-from navigation.environment.grid_environment import GridEnvironment
-from navigation.environment.container_environment import ContainerShipEnv
+from envs.grid_environment import GridEnvironment
+from envs.container_environment import ContainerShipEnv
 
-
-# ============================================================================
-# Hilfsfunktionen
-# ============================================================================
-
-# Seed-Konfiguration für Reproduzierbarkeit
-def set_all_seeds(seed=None):
-    if seed is None:
-        seed = SEED
-
-    random.seed(seed)
-    np.random.seed(seed)
-    print(f"Seeds gesetzt auf: {seed}")
-    return seed
-
-
-# Laden der Q-Tabelle
-def load_q_table():
-    try:
-        Q = np.load(Q_TABLE_PATH)
-        print(f"Q-Tabelle geladen: {Q.shape}")
-        return Q
-    except FileNotFoundError:
-        print(f"FEHLER: Q-Tabelle nicht gefunden: {Q_TABLE_PATH}")
-        print("Bitte führen Sie zuerst das Training aus.")
-        sys.exit(1)
-
-
-# Konvertierung von Observation zu State
-def obs_to_state(obs, env):
-    if ENV_MODE == "container":
-        return obs[0] * env.grid_size + obs[1] + (env.grid_size * env.grid_size) * obs[2]
-    return obs
-
-
-# Extraktion der Position aus Observation
-def get_position(obs):
-    if ENV_MODE == "container":
-        return (obs[0], obs[1])
-    return divmod(obs, GRID_SIZE)
-
-
-# Bestimmung der optimalen Aktion für einen Zustand
-def get_best_action(Q, state):
-    return np.argmax(Q[state])
-
-
-# Erstellung des Export-Ordners
-def setup_export():
-    if EXPORT_PDF:
-        Path(EXPORT_PATH).mkdir(exist_ok=True)
+# Utils
+from utils.common import set_all_seeds, obs_to_state, setup_export
+from utils.qlearning import load_q_table, get_best_action
+from utils.position import get_position
 
 
 # ============================================================================
@@ -105,9 +56,9 @@ def draw_grid(screen, font, env, agent_pos, Q):
             elif hasattr(env, 'start_pos') and pos == env.start_pos:
                 symbol = "🧭"
             elif hasattr(env, "pickup_pos") and pos == env.pickup_pos:
-                symbol = "📤"
-            elif hasattr(env, "dropoff_pos") and pos == env.dropoff_pos:
                 symbol = "📦"
+            elif hasattr(env, "dropoff_pos") and pos == env.dropoff_pos:
+                symbol = "🏁"
             elif hasattr(env, "goal_pos") and pos == env.goal_pos:
                 symbol = "🏁"
             elif pos in getattr(env, "obstacles", []):
@@ -115,7 +66,7 @@ def draw_grid(screen, font, env, agent_pos, Q):
             else:
                 # Policy-Pfeil
                 if ENV_MODE == "container":
-                    state = obs_to_state((i, j, 0), env)
+                    state = obs_to_state((i, j, 0), ENV_MODE, env.grid_size)
                 else:
                     state = env.pos_to_state((i, j))
 
@@ -156,7 +107,13 @@ def run_agent():
 
     # Initialisierung
     env = ContainerShipEnv() if ENV_MODE == "container" else GridEnvironment(mode=ENV_MODE)
-    Q = load_q_table()
+    Q = load_q_table(ENV_MODE)
+
+    if Q is None:
+        print(f"FEHLER: Q-Tabelle nicht gefunden: {Q_TABLE_PATH}")
+        print("Bitte führen Sie zuerst das Training aus.")
+        sys.exit(1)
+
     setup_export()
 
     # Pygame
@@ -168,7 +125,7 @@ def run_agent():
 
     # Episode starten
     obs, _ = env.reset()
-    agent_pos = get_position(obs)
+    agent_pos = get_position(obs, ENV_MODE)
 
     step_count = 0
     total_reward = 0
@@ -192,12 +149,12 @@ def run_agent():
             break
 
         # Aktion ausführen
-        state = obs_to_state(obs, env)
+        state = obs_to_state(obs, ENV_MODE, env.grid_size)
         action = get_best_action(Q, state)
         obs, reward, terminated, truncated, _ = env.step(action)
 
         # Update
-        agent_pos = get_position(obs)
+        agent_pos = get_position(obs, ENV_MODE)
         step_count += 1
         total_reward += reward
 
