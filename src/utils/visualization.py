@@ -18,7 +18,11 @@ def setup_export():
 # ============================================================================
 
 # Erstellung der Lernkurve mit Moving Average
-def create_learning_curve(rewards_per_episode, env_mode, window_size=20):
+def create_learning_curve(rewards_per_episode, env_mode, window_size=20, show=True):
+    import matplotlib.pyplot as plt
+    import numpy as np
+    from config import EXPORT_PDF, EXPORT_PATH
+
     plt.figure(figsize=(12, 6))
 
     # Raw Rewards
@@ -39,14 +43,22 @@ def create_learning_curve(rewards_per_episode, env_mode, window_size=20):
 
     # PDF Export
     if EXPORT_PDF:
-        plt.savefig(f"{EXPORT_PATH}/train_learning_curve.pdf", format='pdf', bbox_inches='tight')
-        print(f"Learning Curve gespeichert: {EXPORT_PATH}/train_learning_curve.pdf")
+        filename = f"{EXPORT_PATH}/train_learning_curve_{env_mode}.pdf"
+        plt.savefig(filename, format='pdf', bbox_inches='tight')
+        print(f"Learning Curve gespeichert: {filename}")
 
-    plt.show()
+    if show:
+        plt.show()
+    else:
+        plt.close()
 
 
 # Erstellung der Erfolgskurve
-def create_success_curve(success_per_episode, env_mode):
+def create_success_curve(success_per_episode, env_mode, show=True):
+    import matplotlib.pyplot as plt
+    import numpy as np
+    from config import EXPORT_PDF, EXPORT_PATH, EPISODES
+
     plt.figure(figsize=(12, 4))
     plt.plot(success_per_episode, label="Ziel erreicht", color='green', alpha=0.7, linewidth=1)
 
@@ -66,14 +78,22 @@ def create_success_curve(success_per_episode, env_mode):
 
     # PDF Export
     if EXPORT_PDF:
-        plt.savefig(f"{EXPORT_PATH}/train_success_curve.pdf", format='pdf', bbox_inches='tight')
-        print(f"Success Curve gespeichert: {EXPORT_PATH}/train_success_curve.pdf")
+        filename = f"{EXPORT_PATH}/train_success_curve_{env_mode}.pdf"
+        plt.savefig(filename, format='pdf', bbox_inches='tight')
+        print(f"Success Curve gespeichert: {filename}")
 
-    plt.show()
+    if show:
+        plt.show()
+    else:
+        plt.close()
 
 
 # Erstellung der Trainingsstatistiken
-def create_training_statistics(rewards_per_episode, success_per_episode, env_mode):
+def create_training_statistics(rewards_per_episode, success_per_episode, env_mode, show=True):
+    import matplotlib.pyplot as plt
+    from config import EXPORT_PDF, EXPORT_PATH
+    import numpy as np
+
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(15, 10))
 
     # Reward-Histogramm
@@ -95,7 +115,7 @@ def create_training_statistics(rewards_per_episode, success_per_episode, env_mod
     ax2.grid(True, alpha=0.3)
 
     # Reward-Entwicklung (letzte X Episoden)
-    display_episodes = min(1000, EPISODES // 2)
+    display_episodes = min(1000, len(rewards_per_episode) // 2)
     ax3.plot(rewards_per_episode[-display_episodes:], alpha=0.6, color='blue')
     ax3.set_title(f"Reward-Entwicklung (letzte {display_episodes} Episoden)")
     ax3.set_xlabel("Episode")
@@ -121,10 +141,14 @@ def create_training_statistics(rewards_per_episode, success_per_episode, env_mod
 
     # PDF Export
     if EXPORT_PDF:
-        plt.savefig(f"{EXPORT_PATH}/train_statistics.pdf", format='pdf', bbox_inches='tight')
-        print(f"Training Statistics gespeichert: {EXPORT_PATH}/train_statistics.pdf")
+        filename = f"{EXPORT_PATH}/train_statistics_{env_mode}.pdf"
+        plt.savefig(filename, format='pdf', bbox_inches='tight')
+        print(f"Training Statistics gespeichert: {filename}")
 
-    plt.show()
+    if show:
+        plt.show()
+    else:
+        plt.close()
 
 
 # ============================================================================

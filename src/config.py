@@ -6,7 +6,15 @@
 
 # Grid Constants
 GRID_SIZE = 5
-N_ACTIONS = 4
+
+# Aktionen (Richtungen)
+ACTIONS = {
+    "up": 0,
+    "right": 1,
+    "down": 2,
+    "left": 3
+}
+N_ACTIONS = len(ACTIONS)
 
 # Standard Grid Layout (für alle Grid-Modi)
 DEFAULT_START_POS = (0, 0)
@@ -68,8 +76,6 @@ EVAL_MAX_STEPS = 50  # Max. Schritte pro Episode in Evaluation (initial: 100)
 # Q-Tabelle Pfad basierend auf Modus
 def get_q_table_path(env_mode):
     return f"q_table_{env_mode}.npy"
-
-Q_TABLE_PATH = get_q_table_path(ENV_MODE)
 
 RESULTS_PATH = "results/"
 PLOTS_PATH = "plots/"

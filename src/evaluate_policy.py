@@ -16,7 +16,7 @@ from collections import defaultdict
 
 # Lokale Module
 from config import (ENV_MODE, EPISODES, MAX_STEPS, LOOP_THRESHOLD, REWARDS,
-                    Q_TABLE_PATH, EXPORT_PDF, EXPORT_PATH, SEED)
+                    get_q_table_path, EXPORT_PDF, EXPORT_PATH, SEED)
 
 # Utils
 from utils.common import set_all_seeds, obs_to_state, check_success, setup_export
@@ -38,7 +38,8 @@ def evaluate_policy():
 
     # Initialisierung
     env, grid_size = initialize_environment(ENV_MODE)
-    Q = load_q_table(ENV_MODE)
+    q_table_path = get_q_table_path(ENV_MODE)
+    Q = load_q_table(q_table_path)
     setup_export()
 
     if Q is None:

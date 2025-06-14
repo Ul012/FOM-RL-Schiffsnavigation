@@ -10,11 +10,16 @@ import os
 # Projektstruktur für Import anpassen
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), ".")))
 
+# ENV_MODE flexibel setzen (über Umgebungsvariable oder config.py)
+ENV_MODE = os.getenv("ENV_MODE", None)
+if ENV_MODE is None:
+    from config import ENV_MODE as CONFIG_ENV_MODE
+    ENV_MODE = CONFIG_ENV_MODE
 # Drittanbieter
 import numpy as np
 
 # Lokale Module
-from config import ENV_MODE, EPISODES, MAX_STEPS, EPSILON, ALPHA, GAMMA, SEED
+from config import EPISODES, MAX_STEPS, EPSILON, ALPHA, GAMMA, SEED
 
 # Utils
 from utils.common import set_all_seeds, obs_to_state, check_success, setup_export
@@ -23,12 +28,12 @@ from utils.qlearning import initialize_q_table, select_action, update_q_value, s
 from utils.visualization import create_learning_curve, create_success_curve, create_training_statistics
 from utils.reporting import print_training_results
 
+SHOW_VISUALIZATIONS = os.getenv("SHOW_VISUALIZATIONS", "true").lower() == "true"
 
 # ============================================================================
 # Hauptfunktion
 # ============================================================================
 
-# Training des Q-Learning Agenten über mehrere Episoden
 def train_agent():
     # Seed für Reproduzierbarkeit setzen
     set_all_seeds()
@@ -44,9 +49,13 @@ def train_agent():
     steps_per_episode = []
 
     print(f"Starte Training mit {EPISODES} Episoden...")
-    print(f"Hyperparameter: α={ALPHA}, γ={GAMMA}, ε={EPSILON}, Seed={SEED}")
+    print(f"Episodes: {EPISODES}")
+    print("Hyperparameter:")
+    print(f"  Lernrate (α): {ALPHA}")
+    print(f"  Discount Factor (γ): {GAMMA}")
+    print(f"  Epsilon (ε): {EPSILON}")
+    print(f"  Seed: {SEED}")
 
-    # Training Loop
     for episode in range(EPISODES):
         obs, _ = env.reset()
         state = obs_to_state(obs, ENV_MODE, grid_size)
@@ -54,37 +63,28 @@ def train_agent():
         steps = 0
         success = False
 
-        # Episode durchführen
         for step in range(MAX_STEPS):
-            # Aktion auswählen
             action = select_action(Q, state, EPSILON, n_actions)
-
-            # Schritt ausführen
             obs, reward, terminated, truncated, _ = env.step(action)
             next_state = obs_to_state(obs, ENV_MODE, grid_size)
             done = terminated or truncated
 
-            # Q-Wert aktualisieren
             update_q_value(Q, state, action, reward, next_state)
 
-            # Tracking
             state = next_state
             total_reward += reward
             steps += 1
 
-            # Erfolgserkennung
             if check_success(reward, ENV_MODE):
                 success = True
 
             if done:
                 break
 
-        # Episode-Statistiken speichern
         rewards_per_episode.append(total_reward)
         success_per_episode.append(1 if success else 0)
         steps_per_episode.append(steps)
 
-        # Fortschritt ausgeben
         if (episode + 1) % max(1, EPISODES // 10) == 0:
             recent_episodes = min(100, episode + 1)
             recent_success_rate = np.mean(success_per_episode[-recent_episodes:]) * 100
@@ -92,19 +92,14 @@ def train_agent():
                   f"Reward={total_reward:.2f}, Steps={steps}, "
                   f"Erfolgsrate (letzte {recent_episodes}): {recent_success_rate:.1f}%")
 
-    # Training abgeschlossen
     print_training_results(rewards_per_episode, success_per_episode, steps_per_episode)
-
-    # Q-Tabelle speichern
     save_q_table(Q, ENV_MODE)
 
-    # Visualisierungen erstellen
-    create_learning_curve(rewards_per_episode, ENV_MODE)
-    create_success_curve(success_per_episode, ENV_MODE)
-    create_training_statistics(rewards_per_episode, success_per_episode, ENV_MODE)
+    create_learning_curve(rewards_per_episode, ENV_MODE, show=SHOW_VISUALIZATIONS)
+    create_success_curve(success_per_episode, ENV_MODE, show=SHOW_VISUALIZATIONS)
+    create_training_statistics(rewards_per_episode, success_per_episode, ENV_MODE, show=SHOW_VISUALIZATIONS)
 
     return Q, rewards_per_episode, success_per_episode
-
 
 # ============================================================================
 # Ausführung
