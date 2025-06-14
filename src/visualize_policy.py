@@ -16,7 +16,7 @@ import numpy as np
 import time
 
 # Lokale Module
-from config import (ENV_MODE, MAX_STEPS, GRID_SIZE, Q_TABLE_PATH,
+from config import (ENV_MODE, MAX_STEPS, GRID_SIZE, get_q_table_path,
                     CELL_SIZE, FRAME_DELAY, EXPORT_PDF, EXPORT_PATH, REWARDS, SEED)
 from envs.grid_environment import GridEnvironment
 from envs.container_environment import ContainerShipEnv

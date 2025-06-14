@@ -17,7 +17,7 @@ import numpy as np
 
 # Lokale Module
 from config import (REWARDS, GRID_SIZE, N_ACTIONS, CONTAINER_START_POS,
-                    CONTAINER_OBSTACLES)
+                    CONTAINER_OBSTACLES, DEBUG_MODE)
 
 
 # ============================================================================
@@ -155,8 +155,9 @@ class ContainerShipEnv(gym.Env):
 
         obs = self._get_obs()
 
-        print(f"Container-Umgebung reset: Start={self.start_pos}, "
-              f"Pickup={self.pickup_pos}, Dropoff={self.dropoff_pos}, Seed={seed}")
+        if DEBUG_MODE:
+            print(
+                f"Container-Umgebung reset: Start={self.start_pos}, Pickup={self.pickup_pos}, Dropoff={self.dropoff_pos}, Seed={seed}")
 
         return obs, {}
 

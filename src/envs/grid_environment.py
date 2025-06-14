@@ -17,7 +17,7 @@ import numpy as np
 
 # Lokale Module
 from config import (REWARDS, GRID_SIZE, N_ACTIONS, DEFAULT_START_POS,
-                    DEFAULT_GOAL_POS, DEFAULT_OBSTACLES)
+                    DEFAULT_GOAL_POS, DEFAULT_OBSTACLES, DEBUG_MODE)
 
 
 # ============================================================================
@@ -193,8 +193,9 @@ class GridEnvironment(gym.Env):
         if self.agent_pos == self.goal_pos:
             print(f"WARNING: Agent startet bereits am Ziel! Start={self.agent_pos}, Ziel={self.goal_pos}")
 
-        print(f"Grid-Umgebung reset: Modus={self.mode}, Start={self.start_pos}, "
-              f"Ziel={self.goal_pos}, Hindernisse={self.obstacles}, Seed={seed}")
+        if DEBUG_MODE:
+            print(
+                f"Grid-Umgebung reset: Modus={self.mode}, Start={self.start_pos}, Ziel={self.goal_pos}, Hindernisse={self.obstacles}, Seed={seed}")
 
         return self.state, {}
 
