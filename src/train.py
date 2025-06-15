@@ -99,6 +99,24 @@ def train_agent():
     create_success_curve(success_per_episode, ENV_MODE, show=SHOW_VISUALIZATIONS)
     create_training_statistics(rewards_per_episode, success_per_episode, ENV_MODE, show=SHOW_VISUALIZATIONS)
 
+    # Erweiterte Konsolenausgabe: Reward-Varianz und durchschnittliche Schritte
+    reward_mean = np.mean(rewards_per_episode)
+    reward_std = np.std(rewards_per_episode)
+    reward_var = np.var(rewards_per_episode)
+
+    steps_mean = np.mean(steps_per_episode)
+    steps_min = np.min(steps_per_episode)
+    steps_max = np.max(steps_per_episode)
+
+    print("\nZusätzliche Metriken:")
+    print("  Reward-Statistiken:")
+    print(f"    Standardabweichung: {reward_std:.2f}")
+    print(f"    Varianz: {reward_var:.2f}")
+    print("  Schritt-Statistiken:")
+    print(f"    Durchschnittliche Schritte: {steps_mean:.1f}")
+    print(f"    Minimum: {steps_min}")
+    print(f"    Maximum: {steps_max}")
+
     return Q, rewards_per_episode, success_per_episode
 
 # ============================================================================
