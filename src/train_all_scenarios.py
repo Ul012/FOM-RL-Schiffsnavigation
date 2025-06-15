@@ -14,6 +14,7 @@ from datetime import datetime
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '.')))
 
 from utils.common import setup_export
+from utils.evaluation_export import export_results_to_csv
 
 # ============================================================================
 # Konfiguration
@@ -84,7 +85,7 @@ def run_training_for_scenario(scenario_name, scenario_config):
         if result.returncode == 0:
             print(f"✅ Training erfolgreich abgeschlossen ({duration:.1f}s)")
             print(f"Q-Tabelle gespeichert: q_table_{scenario_config['env_mode']}.npy")
-            output_lines = result.stdout.split('\n') # wenn Ausgabe kürzer sein soll:[-20:] anhängen direkt hinter ('\n')
+            output_lines = result.stdout.split('\n')
             for line in output_lines:
                 if line.strip():
                     print(f"  {line}")
@@ -92,17 +93,17 @@ def run_training_for_scenario(scenario_name, scenario_config):
             print(f"❌ Training fehlgeschlagen ({duration:.1f}s)")
             print(f"Fehler: {result.stderr}")
 
-        return result.returncode == 0
+        return result.returncode == 0, result.stdout
 
     except subprocess.TimeoutExpired:
         print(f"⏰ Training-Timeout nach 30min")
-        return False
+        return False, ""
     except Exception as e:
         print(f"❌ Unerwarteter Fehler: {e}")
-        return False
+        return False, ""
 
 # ============================================================================
-# Ausführung
+# Hauptfunktion zur Ausführung aller Szenarien
 # ============================================================================
 
 def train_all_scenarios():
@@ -114,13 +115,35 @@ def train_all_scenarios():
 
     if PARALLEL_TRAINING:
         print("⚠️  Parallel Training ist derzeit deaktiviert")
-        return
-    else:
-        results = {}
-        for i, (scenario_name, scenario_config) in enumerate(SCENARIOS.items(), 1):
-            print(f"\n[{i}/{len(SCENARIOS)}] Nächstes Szenario: {scenario_name}")
-            results[scenario_name] = run_training_for_scenario(scenario_name, scenario_config)
-            time.sleep(2)
+        return []
+
+    results = {}
+    scenario_results = []
+
+    for i, (scenario_name, scenario_config) in enumerate(SCENARIOS.items(), 1):
+        print(f"\n[{i}/{len(SCENARIOS)}] Nächstes Szenario: {scenario_name}")
+        success, stdout = run_training_for_scenario(scenario_name, scenario_config)
+        results[scenario_name] = success
+        time.sleep(2)
+
+        # Werte aus der Terminalausgabe extrahieren
+        def extract_value(label, text, cast_fn=float):
+            for line in text.splitlines():
+                if label in line:
+                    try:
+                        return cast_fn(line.split(":")[1].split()[0])
+                    except (IndexError, ValueError):
+                        return None
+            return None
+
+        scenario_results.append({
+            "name": scenario_name,
+            "success_rate": extract_value("Erfolgreiche Episoden", stdout, lambda x: float(x.split("/")[0]) / float(x.split("/")[1].strip("()")) * 100),
+            "total_reward": extract_value("Gesamtreward", stdout),
+            "avg_reward": extract_value("Durchschnitt", stdout),
+            "avg_steps": extract_value("Durchschnittliche Schritte", stdout),
+            "reward_variance": extract_value("Varianz", stdout)
+        })
 
     print(f"\n{'=' * 60}")
     print("TRAINING ZUSAMMENFASSUNG")
@@ -131,6 +154,13 @@ def train_all_scenarios():
         q_table_exists = os.path.exists(f"q_table_{SCENARIOS[scenario_name]['env_mode']}.npy")
         q_table_status = "Q-Tabelle ✓" if q_table_exists else "Q-Tabelle ✗"
         print(f"{scenario_name:<20} {status:<15} {q_table_status}")
+
+    export_results_to_csv(scenario_results)
+    return scenario_results
+
+# ============================================================================
+# Einstiegspunkt
+# ============================================================================
 
 if __name__ == "__main__":
     train_all_scenarios()

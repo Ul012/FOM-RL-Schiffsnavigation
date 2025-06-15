@@ -103,6 +103,7 @@ def train_agent():
     reward_mean = np.mean(rewards_per_episode)
     reward_std = np.std(rewards_per_episode)
     reward_var = np.var(rewards_per_episode)
+    reward_total = np.sum(rewards_per_episode)
 
     steps_mean = np.mean(steps_per_episode)
     steps_min = np.min(steps_per_episode)
@@ -110,6 +111,8 @@ def train_agent():
 
     print("\nZusätzliche Metriken:")
     print("  Reward-Statistiken:")
+    print(f"    Gesamtreward: {reward_total:.2f}")
+    print(f"    Durchschnittlicher Reward: {reward_mean:.2f}")
     print(f"    Standardabweichung: {reward_std:.2f}")
     print(f"    Varianz: {reward_var:.2f}")
     print("  Schritt-Statistiken:")
@@ -117,7 +120,7 @@ def train_agent():
     print(f"    Minimum: {steps_min}")
     print(f"    Maximum: {steps_max}")
 
-    return Q, rewards_per_episode, success_per_episode
+    return Q, rewards_per_episode, success_per_episode, reward_total
 
 # ============================================================================
 # Ausführung
