@@ -6,6 +6,7 @@
 
 import sys
 import os
+import numpy as np
 
 # Projektstruktur für Import anpassen
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), ".")))
@@ -15,8 +16,6 @@ ENV_MODE = os.getenv("ENV_MODE", None)
 if ENV_MODE is None:
     from config import ENV_MODE as CONFIG_ENV_MODE
     ENV_MODE = CONFIG_ENV_MODE
-# Drittanbieter
-import numpy as np
 
 # Lokale Module
 from config import EPISODES, MAX_STEPS, EPSILON, ALPHA, GAMMA, SEED
@@ -27,6 +26,7 @@ from utils.environment import initialize_environment
 from utils.qlearning import initialize_q_table, select_action, update_q_value, save_q_table
 from utils.visualization import create_learning_curve, create_success_curve, create_training_statistics
 from utils.reporting import print_training_results
+from utils.evaluation_export import create_combined_curve_pdf
 
 SHOW_VISUALIZATIONS = os.getenv("SHOW_VISUALIZATIONS", "true").lower() == "true"
 
@@ -34,7 +34,7 @@ SHOW_VISUALIZATIONS = os.getenv("SHOW_VISUALIZATIONS", "true").lower() == "true"
 # Hauptfunktion
 # ============================================================================
 
-def train_agent():
+def train_agent(scenario):
     # Seed für Reproduzierbarkeit setzen
     set_all_seeds()
 
@@ -120,6 +120,10 @@ def train_agent():
     print(f"    Minimum: {steps_min}")
     print(f"    Maximum: {steps_max}")
 
+    # Speichern der Kurven als .npy
+    np.save(f"exports/learning_curve_{scenario}.npy", rewards_per_episode)
+    np.save(f"exports/success_curve_{scenario}.npy", success_per_episode)
+
     return Q, rewards_per_episode, success_per_episode, reward_total
 
 # ============================================================================
@@ -127,4 +131,6 @@ def train_agent():
 # ============================================================================
 
 if __name__ == "__main__":
-    train_agent()
+    import os
+    scenario = os.getenv("ENV_MODE", "static")  # oder eine andere Methode, deinen Szenarionamen zu setzen
+    train_agent(scenario)

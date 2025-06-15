@@ -14,7 +14,7 @@ from datetime import datetime
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '.')))
 
 from utils.common import setup_export
-from utils.evaluation_export import export_results_to_csv
+from utils.evaluation_export import export_results_to_csv, create_combined_curve_pdf  # beide Funktionen
 
 # ============================================================================
 # Konfiguration
@@ -66,11 +66,13 @@ def run_training_for_scenario(scenario_name, scenario_config):
     start_time = time.time()
 
     try:
+        # Übergabe von Umgebungsvariablen zur Steuerung des Trainings
         env = os.environ.copy()
         env["ENV_MODE"] = scenario_config["env_mode"]
         env["EXPORT_PDF"] = "False" if not SHOW_VISUALIZATIONS else "True"
         env["SHOW_VISUALIZATIONS"] = "False" if not SHOW_VISUALIZATIONS else "True"
 
+        # Aufruf des Trainingsscripts mit Übergabe der Konfiguration
         result = subprocess.run(
             [sys.executable, "train.py"],
             capture_output=True,
@@ -111,6 +113,7 @@ def train_all_scenarios():
     print(f"Anzahl Szenarien: {len(SCENARIOS)}")
     print(f"Training-Modus: {'Parallel' if PARALLEL_TRAINING else 'Sequenziell'}")
 
+    # Sicherstellen, dass Exportordner vorhanden ist
     setup_export()
 
     if PARALLEL_TRAINING:
@@ -126,7 +129,7 @@ def train_all_scenarios():
         results[scenario_name] = success
         time.sleep(2)
 
-        # Werte aus der Terminalausgabe extrahieren
+        # Hilfsfunktion zum Extrahieren numerischer Werte aus der Konsolenausgabe
         def extract_value(label, text, cast_fn=float):
             for line in text.splitlines():
                 if label in line:
@@ -136,6 +139,7 @@ def train_all_scenarios():
                         return None
             return None
 
+        # Sammeln der Metriken pro Szenario
         scenario_results.append({
             "name": scenario_name,
             "success_rate": extract_value("Erfolgreiche Episoden", stdout, lambda x: float(x.split("/")[0]) / float(x.split("/")[1].strip("()")) * 100),
@@ -149,12 +153,14 @@ def train_all_scenarios():
     print("TRAINING ZUSAMMENFASSUNG")
     print(f"{'=' * 60}")
 
+    # Zusammenfassung in Konsole
     for scenario_name, success in results.items():
         status = "✅ Erfolgreich" if success else "❌ Fehlgeschlagen"
         q_table_exists = os.path.exists(f"q_table_{SCENARIOS[scenario_name]['env_mode']}.npy")
         q_table_status = "Q-Tabelle ✓" if q_table_exists else "Q-Tabelle ✗"
         print(f"{scenario_name:<20} {status:<15} {q_table_status}")
 
+    # Export als CSV-Datei
     export_results_to_csv(scenario_results)
     return scenario_results
 
@@ -163,4 +169,9 @@ def train_all_scenarios():
 # ============================================================================
 
 if __name__ == "__main__":
-    train_all_scenarios()
+    scenario_results = train_all_scenarios()
+
+    # Erzeugung kombinierter PDF-Grafiken für Lernverlauf und Erfolgsquote
+    scenario_names = [result["name"] for result in scenario_results]
+    create_combined_curve_pdf(scenario_names, export_dir="exports", metric="learning")
+    create_combined_curve_pdf(scenario_names, export_dir="exports", metric="success")
